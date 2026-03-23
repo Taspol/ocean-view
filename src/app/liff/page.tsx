@@ -57,7 +57,7 @@ export default function LIFFDashboard() {
 
                 if (response.ok) {
                     setStatus('Login successful, redirecting...');
-                    router.replace('/dashboard');
+                    window.location.href = '/dashboard';
                     return;
                 }
 

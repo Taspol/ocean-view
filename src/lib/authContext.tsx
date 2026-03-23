@@ -35,16 +35,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkUser = async () => {
       try {
+        // First try server-side cookie backed session (works for LIFF/API logins).
+        const sessionRes = await fetch('/api/auth/session', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        const sessionData = await sessionRes.json();
+
+        if (sessionData?.authenticated) {
+          if (sessionData.profile) {
+            setUser(sessionData.profile);
+            return;
+          }
+
+          if (sessionData.user?.id) {
+            const fallbackProfile: UserProfile = {
+              id: sessionData.user.id,
+              email: sessionData.user.email || '',
+              line_id: undefined,
+              birthdate: undefined,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            };
+            setUser(fallbackProfile);
+            return;
+          }
+        }
+
+        // Fallback to local Supabase browser session for compatibility.
         const supabase = getSupabaseClient();
         const { data } = await supabase.auth.getSession();
         if (data.session?.user) {
-          // Fetch user profile from users table
           const { data: profile } = await supabase
             .from('users')
             .select('*')
             .eq('id', data.session.user.id)
             .single();
-          
+
           if (profile) {
             setUser(profile);
           }

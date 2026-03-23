@@ -1,38 +1,64 @@
-import { createSupabaseClient } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(request: NextRequest) {
-  try {
-    const supabase = createSupabaseClient();
-    const { data, error } = await supabase.auth.getSession();
+function getSupabaseClients() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (error || !data.session) {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Missing Supabase environment variables');
+  }
+
+  const anon = createClient(supabaseUrl, supabaseAnonKey);
+  const admin = supabaseServiceRoleKey
+    ? createClient(supabaseUrl, supabaseServiceRoleKey)
+    : anon;
+
+  return { anon, admin };
+}
+
+async function resolveSessionFromCookie(request: NextRequest) {
+  const authToken = request.cookies.get('sb-session-token')?.value;
+  if (!authToken) {
+    return { user: null, profile: null };
+  }
+
+  const { anon, admin } = getSupabaseClients();
+  const { data: userData, error: userError } = await anon.auth.getUser(authToken);
+
+  if (userError || !userData.user?.id) {
+    return { user: null, profile: null };
+  }
+
+  const { data: profile } = await admin
+    .from('users')
+    .select('*')
+    .eq('id', userData.user.id)
+    .maybeSingle();
+
+  return { user: userData.user, profile: profile || null };
+}
+
+async function handleSessionRequest(request: NextRequest) {
+  try {
+    const { user, profile } = await resolveSessionFromCookie(request);
+
+    if (!user) {
       return NextResponse.json(
         { authenticated: false },
         { status: 200 }
       );
     }
 
-    // Create response with session data
-    const response = NextResponse.json(
-      { 
+    return NextResponse.json(
+      {
         authenticated: true,
-        user: data.session.user,
+        user,
+        profile,
       },
       { status: 200 }
     );
-
-    // Set session cookie (optional, for middleware verification)
-    if (data.session.access_token) {
-      response.cookies.set('sb-session-token', data.session.access_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-      });
-    }
-
-    return response;
   } catch (error) {
     console.error('Session check error:', error);
     return NextResponse.json(
@@ -40,4 +66,12 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   }
+}
+
+export async function GET(request: NextRequest) {
+  return handleSessionRequest(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handleSessionRequest(request);
 }
