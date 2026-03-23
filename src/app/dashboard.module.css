@@ -1,0 +1,31 @@
+.envHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.zoneSelect {
+  padding: 8px 14px;
+  background-color: #fff;
+  color: #1e293b;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: border-color 0.2s;
+  white-space: nowrap;
+}
+
+.zoneSelect:hover {
+  border-color: #94a3b8;
+}
+
+.zoneSelect:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
+}

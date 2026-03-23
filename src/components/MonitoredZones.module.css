@@ -1,0 +1,303 @@
+.container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    grid-template-columns: 2fr 1fr;
+    gap: 32px;
+  }
+}
+
+.mainColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.searchHeader {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: #1e293b;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.searchInput:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+}
+
+.searchDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.dropdownItem {
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.2s;
+}
+
+.dropdownItem:last-child {
+  border-bottom: none;
+}
+
+.dropdownItem:hover {
+  background-color: #f8fafc;
+}
+
+.dropdownName {
+  font-weight: 500;
+  color: #0f172a;
+}
+
+.dropdownChance {
+  font-size: 0.875rem;
+  color: #0ea5e9;
+  font-weight: 600;
+}
+
+.emptyState {
+  padding: 16px;
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* Inherited List Styles */
+.configItemRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  padding: 16px;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s;
+}
+
+.configItemRow:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.zoneInfo {
+  flex: 1;
+  padding-right: 16px;
+}
+
+.zoneName {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+
+.zoneCoords {
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.zoneRate {
+  text-align: right;
+  padding: 0 16px;
+  border-left: 1px solid #e2e8f0;
+}
+
+.rateLabel {
+  font-size: 1rem;
+  color: #64748b;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  font-weight: 600;
+}
+
+.rateValue {
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: #0369a1;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 16px;
+}
+
+.actionBtn {
+  padding: 10px 24px;
+  color: white;
+  font-weight: 500;
+  font-size: 1rem;
+  background: #0369a1;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.actionBtn:hover {
+  background: #075985;
+}
+
+.menuContainer {
+  position: relative;
+}
+
+.moreBtn {
+  padding: 4px 8px;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5rem;
+  line-height: 1;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.moreBtn:hover {
+  color: #0f172a;
+  background-color: #f1f5f9;
+}
+
+.popupMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  min-width: 120px;
+  z-index: 20;
+  overflow: hidden;
+}
+
+.deleteOption {
+  width: 100%;
+  text-align: left;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-family: inherit;
+}
+
+.deleteOption:hover {
+  background-color: #fef2f2;
+}
+
+/* Right Side Leaderboard Styles */
+.sideColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.sideTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+  border-bottom: 2px solid #f1f5f9;
+  padding-bottom: 12px;
+}
+
+.topList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none; /* No dots */
+}
+
+.topListItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.rankNumber {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #94a3b8;
+  min-width: 30px;
+}
+
+/* 1st Place specific coloring */
+.topListItem:nth-child(1) .rankNumber { color: #000; }
+.topListItem:nth-child(1) .topName { color: #000; font-weight: 700; }
+.topListItem:nth-child(1) .topChance { color: #000; }
+
+.topInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Default styling for places 2-5 */
+.topName {
+  font-weight: 500;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.topChance {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-top: 2px;
+}

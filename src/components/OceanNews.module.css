@@ -1,0 +1,157 @@
+.container {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 32px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.liveDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #64748b;
+}
+
+.headerLabel {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #1e293b;
+  letter-spacing: 0.01em;
+}
+
+.headerSub {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.newsList {
+  display: flex;
+  flex-direction: column;
+}
+
+.newsCard {
+  padding: 14px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.newsCard:last-child {
+  border-bottom: none;
+}
+
+.newsCard:hover {
+  background: #f8fafc;
+}
+
+.newsCard.expanded {
+  background: #f8fafc;
+}.container {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.headerLabel {
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: #1e293b;
+  letter-spacing: 0.01em;
+}
+
+.headerSub {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.newsCard {
+  padding: 12px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.newsCard:active {
+  background: #f8fafc;
+}
+
+@media (min-width: 768px) {
+  .container {
+    margin-bottom: 32px;
+  }
+
+  .header {
+    padding: 12px 20px;
+  }
+
+  .headerLabel {
+    font-size: 0.875rem;
+  }
+
+  .headerSub {
+    font-size: 0.75rem;
+  }
+
+  .newsCard {
+    padding: 14px 20px;
+  }
+
+  .newsCard:hover {
+    background: #f8fafc;
+  }
+}
+
+.time {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+.chevron {
+  font-size: 0.6rem;
+  color: #94a3b8;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.summary {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.6;
+  padding-left: calc(1.25rem + 12px); /* align with title */
+}

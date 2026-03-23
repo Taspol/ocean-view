@@ -1,0 +1,110 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+
+export default function LIFFDashboard() {
+    const router = useRouter();
+    const [status, setStatus] = useState('Connecting to LINE...');
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const startLiffLoginFlow = async () => {
+            try {
+                const liffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID;
+
+                if (!liffId) {
+                    throw new Error('Missing NEXT_PUBLIC_LINE_LIFF_ID in environment');
+                }
+
+                const liffModule = await import('@line/liff');
+                const liff = liffModule.default;
+
+                await liff.init({ liffId });
+
+                if (!liff.isLoggedIn()) {
+                    liff.login({ redirectUri: window.location.href });
+                    return;
+                }
+
+                setStatus('Reading LINE profile...');
+                const profile = await liff.getProfile();
+                const lineId = profile.userId;
+                const idToken = liff.getIDToken();
+
+                if (!lineId || !idToken) {
+                    throw new Error('Unable to read LINE user ID from profile');
+                }
+
+                setStatus('Checking account link...');
+                const response = await fetch('/api/auth/line/session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lineId, idToken }),
+                    credentials: 'include',
+                });
+
+                if (response.ok) {
+                    setStatus('Login successful, redirecting...');
+                    router.replace('/dashboard');
+                    return;
+                }
+
+                if (response.status === 404) {
+                    setStatus('No linked account found, redirecting to signup...');
+                    const params = new URLSearchParams({
+                        mode: 'signup',
+                        lineId,
+                        redirectTo: '/dashboard',
+                    });
+                    router.replace(`/login?${params.toString()}`);
+                    return;
+                }
+
+                const payload = (await response.json().catch(() => ({}))) as { error?: string };
+                throw new Error(payload.error || 'Failed to authenticate with LINE');
+            } catch (err) {
+                if (!isMounted) return;
+                const message = err instanceof Error ? err.message : 'LINE login failed';
+                setError(message);
+            }
+        };
+
+        void startLiffLoginFlow();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [router]);
+
+    return (
+        <main
+            style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '24px 16px',
+                background: 'var(--background)',
+                color: 'var(--foreground)',
+            }}
+        >
+            <section
+                style={{
+                    width: '100%',
+                    maxWidth: '420px',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    textAlign: 'center',
+                }}
+            >
+                <h1 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>LINE Login</h1>
+                <p style={{ margin: 0, opacity: 0.8 }}>{error || status}</p>
+            </section>
+        </main>
+    );
+}
