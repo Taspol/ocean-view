@@ -135,6 +135,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (profileError) {
+      if (line_id) {
+        return NextResponse.json(
+          {
+            error:
+              'LINE connection could not be saved. Please try signup again so LINE login can work automatically.',
+            code: profileError.code || 'PROFILE_UPSERT_FAILED',
+          },
+          { status: 500 }
+        );
+      }
+
       // Don't fail signup; profile can be created lazily on first authenticated flow.
       console.warn('User profile creation deferred during signup:', profileError);
     }

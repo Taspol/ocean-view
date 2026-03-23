@@ -66,6 +66,7 @@ export default function LIFFDashboard() {
                     localStorage.setItem('lineUserId', rawLineUserId);
                     const params = new URLSearchParams({
                         mode: 'signup',
+                        rawLineUserId,
                         redirectTo: '/dashboard',
                     });
                     router.replace(`/login?${params.toString()}`);

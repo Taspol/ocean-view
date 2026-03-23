@@ -21,9 +21,16 @@ export default function LoginContent() {
 
     useEffect(() => {
         const modeParam = searchParams.get('mode');
+        const rawLineUserIdParam = searchParams.get('rawLineUserId');
 
         if (modeParam === 'signup' || modeParam === 'login') {
             setMode(modeParam);
+        }
+
+        if (rawLineUserIdParam) {
+            setRawLineUserId(rawLineUserIdParam);
+            setMode('signup');
+            return;
         }
 
         const storedLineUserId = localStorage.getItem('lineUserId');
