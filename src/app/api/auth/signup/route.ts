@@ -64,20 +64,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const appUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.APP_URL ||
-      (process.env.NODE_ENV === 'production'
-        ? 'https://oceanview.taspolsd.dev'
-        : 'http://localhost:3000');
+    if (!admin) {
+      return NextResponse.json(
+        {
+          error:
+            'SUPABASE_SERVICE_ROLE_KEY is required to create users without email verification',
+        },
+        { status: 500 }
+      );
+    }
 
-    // Create auth user
-    const { data: authData, error: authError } = await anon.auth.signUp({
+    // Create auth user as already email-confirmed (skip verification email flow).
+    const { data: authData, error: authError } = await admin.auth.admin.createUser({
       email,
       password,
-      options: {
-        emailRedirectTo: `${appUrl}/login`,
-      },
+      email_confirm: true,
     });
 
     if (authError) {
@@ -95,52 +96,44 @@ export async function POST(request: NextRequest) {
     }
 
     // Create user profile in users table.
-    // Use service-role client here to avoid RLS violations from public signup context.
     let profileError: { code?: string; message?: string } | null = null;
 
-    if (!admin) {
+    const authUserVisible = await waitForAuthUser(admin, authData.user.id);
+
+    if (!authUserVisible) {
       profileError = {
-        code: 'NO_SERVICE_ROLE_KEY',
-        message: 'SUPABASE_SERVICE_ROLE_KEY is required for profile upsert during signup',
+        code: 'AUTH_USER_NOT_VISIBLE',
+        message: 'Auth user not visible yet for profile upsert',
       };
     } else {
-      const authUserVisible = await waitForAuthUser(admin, authData.user.id);
+      // Even after visibility check, keep retries for transient FK checks.
+      for (let attempt = 1; attempt <= 5; attempt += 1) {
+        const { error } = await admin
+          .from('users')
+          .upsert(
+            {
+              id: authData.user.id,
+              email,
+              line_id: line_id || null,
+              birthdate: birthdate || null,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'id' }
+          );
 
-      if (!authUserVisible) {
-        profileError = {
-          code: 'AUTH_USER_NOT_VISIBLE',
-          message: 'Auth user not visible yet for profile upsert',
-        };
-      } else {
-        // Even after visibility check, keep retries for transient FK checks.
-        for (let attempt = 1; attempt <= 5; attempt += 1) {
-          const { error } = await admin
-            .from('users')
-            .upsert(
-              {
-                id: authData.user.id,
-                email,
-                line_id: line_id || null,
-                birthdate: birthdate || null,
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: 'id' }
-            );
-
-          if (!error) {
-            profileError = null;
-            break;
-          }
-
-          profileError = error;
-
-          if (error.code === '23503' && attempt < 5) {
-            await sleep(300 * attempt);
-            continue;
-          }
-
+        if (!error) {
+          profileError = null;
           break;
         }
+
+        profileError = error;
+
+        if (error.code === '23503' && attempt < 5) {
+          await sleep(300 * attempt);
+          continue;
+        }
+
+        break;
       }
     }
 
@@ -160,19 +153,32 @@ export async function POST(request: NextRequest) {
       console.warn('User profile creation deferred during signup:', profileError);
     }
 
+    // Sign in immediately to create session cookie for the frontend.
+    const { data: signInData, error: signInError } = await anon.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError || !signInData.user) {
+      return NextResponse.json(
+        { error: signInError?.message || 'Signup succeeded but automatic login failed' },
+        { status: 500 }
+      );
+    }
+
     // Create response with session data
     const response = NextResponse.json(
       { 
         message: 'User created successfully',
-        user: authData.user,
-        requiresEmailConfirmation: !authData.session,
+        user: signInData.user,
+        requiresEmailConfirmation: false,
       },
       { status: 201 }
     );
 
-    // Set session cookie if session exists
-    if (authData.session?.access_token) {
-      response.cookies.set('sb-session-token', authData.session.access_token, {
+    // Set session cookie
+    if (signInData.session?.access_token) {
+      response.cookies.set('sb-session-token', signInData.session.access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
