@@ -154,7 +154,7 @@ export default function LoginContent() {
                     {mode === 'signup' && (
                         <>
                             <div className={styles.field}>
-                                <label className={styles.label}>LINE ID <span style={{ color: '#999', fontSize: '0.8em' }}>(optional)</span></label>
+                                <label className={styles.label}>LINE ID <span style={{ color: '#999', fontSize: '0.8em' }}>(auto-filled from LINE, you can edit)</span></label>
                                 <input
                                     type="text"
                                     className={styles.input}
@@ -163,6 +163,7 @@ export default function LoginContent() {
                                     onChange={(e) => setLineId(e.target.value)}
                                     disabled={loading}
                                 />
+                                <p style={{ fontSize: '0.75rem', color: '#999', margin: '0.25rem 0 0 0' }}>This will be your unique LINE identifier in our system</p>
                             </div>
 
                             <div className={styles.field}>
