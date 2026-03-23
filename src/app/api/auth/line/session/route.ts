@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 interface LineSessionRequest {
   lineId?: string;
+  rawLineUserId?: string;
   idToken?: string;
   accessToken?: string;
 }
@@ -30,12 +31,13 @@ export async function POST(request: NextRequest) {
   try {
     const body: LineSessionRequest = await request.json();
     const lineId = body.lineId?.trim();
+    const rawLineUserId = body.rawLineUserId?.trim();
     const idToken = body.idToken?.trim();
     const accessToken = body.accessToken?.trim();
 
-    if (!lineId || (!idToken && !accessToken)) {
+    if (!lineId || !rawLineUserId || (!idToken && !accessToken)) {
       return NextResponse.json(
-        { error: 'lineId and either idToken or accessToken are required' },
+        { error: 'lineId, rawLineUserId and either idToken or accessToken are required' },
         { status: 400 }
       );
     }
@@ -70,9 +72,9 @@ export async function POST(request: NextRequest) {
       }
 
       const verifyPayload = (await verifyResponse.json()) as { sub?: string };
-      if (!verifyPayload.sub || verifyPayload.sub !== lineId) {
+      if (!verifyPayload.sub || verifyPayload.sub !== rawLineUserId) {
         return NextResponse.json(
-          { error: 'LINE ID token does not match provided lineId' },
+          { error: 'LINE ID token does not match provided rawLineUserId' },
           { status: 401 }
         );
       }
@@ -92,9 +94,9 @@ export async function POST(request: NextRequest) {
       }
 
       const profilePayload = (await profileResponse.json()) as { userId?: string };
-      if (!profilePayload.userId || profilePayload.userId !== lineId) {
+      if (!profilePayload.userId || profilePayload.userId !== rawLineUserId) {
         return NextResponse.json(
-          { error: 'LINE access token does not match provided lineId' },
+          { error: 'LINE access token does not match provided rawLineUserId' },
           { status: 401 }
         );
       }
@@ -102,17 +104,37 @@ export async function POST(request: NextRequest) {
 
     const { admin, anon } = getSupabaseClients();
 
-    const { data: profile, error: profileError } = await admin
+    const { data: friendlyProfile, error: friendlyProfileError } = await admin
       .from('users')
       .select('id, email, line_id, birthdate, created_at, updated_at')
       .eq('line_id', lineId)
       .maybeSingle();
 
-    if (profileError) {
+    if (friendlyProfileError) {
       return NextResponse.json(
-        { error: profileError.message || 'Failed to check LINE ID' },
+        { error: friendlyProfileError.message || 'Failed to check LINE ID' },
         { status: 500 }
       );
+    }
+
+    let profile = friendlyProfile;
+
+    // Backward compatibility: allow users already stored with raw LINE user ID.
+    if (!profile && lineId !== rawLineUserId) {
+      const { data: rawProfile, error: rawProfileError } = await admin
+        .from('users')
+        .select('id, email, line_id, birthdate, created_at, updated_at')
+        .eq('line_id', rawLineUserId)
+        .maybeSingle();
+
+      if (rawProfileError) {
+        return NextResponse.json(
+          { error: rawProfileError.message || 'Failed to check raw LINE user ID' },
+          { status: 500 }
+        );
+      }
+
+      profile = rawProfile;
     }
 
     if (!profile) {

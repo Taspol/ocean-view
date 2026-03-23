@@ -11,6 +11,15 @@ export default function LIFFDashboard() {
     useEffect(() => {
         let isMounted = true;
 
+        const normalizeLineId = (displayName: string | undefined, fallback: string) => {
+            if (!displayName) return fallback;
+            const normalized = displayName
+                .toLowerCase()
+                .replace(/\s+/g, '')
+                .replace(/[^a-z0-9._-]/g, '');
+            return normalized || fallback;
+        };
+
         const startLiffLoginFlow = async () => {
             try {
                 const liffId = process.env.NEXT_PUBLIC_LIFF_LOGIN_ID;
@@ -39,11 +48,12 @@ export default function LIFFDashboard() {
 
                 setStatus('Reading LINE profile...');
                 const profile = await liff.getProfile();
-                const lineId = profile.userId;
+                const rawLineUserId = profile.userId;
+                const lineId = normalizeLineId(profile.displayName, rawLineUserId);
                 const idToken = liff.getIDToken();
                 const accessToken = liff.getAccessToken();
 
-                if (!lineId || (!idToken && !accessToken)) {
+                if (!rawLineUserId || (!idToken && !accessToken)) {
                     throw new Error('Unable to read LINE user ID from profile');
                 }
 
@@ -51,7 +61,7 @@ export default function LIFFDashboard() {
                 const response = await fetch('/api/auth/line/session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ lineId, idToken, accessToken }),
+                    body: JSON.stringify({ lineId, rawLineUserId, idToken, accessToken }),
                     credentials: 'include',
                 });
 
