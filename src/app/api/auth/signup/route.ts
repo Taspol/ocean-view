@@ -2,15 +2,21 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Create supabase client only when the route is actually called
-function getSupabaseClient() {
+function getSupabaseClients() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Missing Supabase environment variables');
   }
 
-  return createClient(supabaseUrl, supabaseAnonKey);
+  const anon = createClient(supabaseUrl, supabaseAnonKey);
+  const admin = supabaseServiceRoleKey
+    ? createClient(supabaseUrl, supabaseServiceRoleKey)
+    : null;
+
+  return { anon, admin };
 }
 
 interface SignupRequest {
@@ -27,7 +33,7 @@ function sleep(ms: number) {
 export async function POST(request: NextRequest) {
   try {
     const body: SignupRequest = await request.json();
-    const supabase = getSupabaseClient();
+    const { anon, admin } = getSupabaseClients();
 
     const { email, password, line_id, birthdate } = body;
 
@@ -40,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create auth user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await anon.auth.signUp({
       email,
       password,
     });
@@ -60,36 +66,45 @@ export async function POST(request: NextRequest) {
     }
 
     // Create user profile in users table.
-    // On some setups, FK checks can race briefly after auth.signUp, so retry a few times.
+    // Use service-role client here to avoid RLS violations from public signup context.
     let profileError: { code?: string; message?: string } | null = null;
-    for (let attempt = 1; attempt <= 3; attempt += 1) {
-      const { error } = await supabase
-        .from('users')
-        .upsert(
-          {
-            id: authData.user.id,
-            email,
-            line_id: line_id || null,
-            birthdate: birthdate || null,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'id' }
-        );
 
-      if (!error) {
-        profileError = null;
+    if (!admin) {
+      profileError = {
+        code: 'NO_SERVICE_ROLE_KEY',
+        message: 'SUPABASE_SERVICE_ROLE_KEY is required for profile upsert during signup',
+      };
+    } else {
+      // On some setups, FK checks can race briefly after auth.signUp, so retry a few times.
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        const { error } = await admin
+          .from('users')
+          .upsert(
+            {
+              id: authData.user.id,
+              email,
+              line_id: line_id || null,
+              birthdate: birthdate || null,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'id' }
+          );
+
+        if (!error) {
+          profileError = null;
+          break;
+        }
+
+        profileError = error;
+
+        // 23503 = foreign_key_violation (usually auth.users row not visible yet)
+        if (error.code === '23503' && attempt < 3) {
+          await sleep(350 * attempt);
+          continue;
+        }
+
         break;
       }
-
-      profileError = error;
-
-      // 23503 = foreign_key_violation (usually auth.users row not visible yet)
-      if (error.code === '23503' && attempt < 3) {
-        await sleep(350 * attempt);
-        continue;
-      }
-
-      break;
     }
 
     if (profileError) {
