@@ -20,6 +20,10 @@ interface SignupRequest {
   birthdate?: string;
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body: SignupRequest = await request.json();
@@ -55,24 +59,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create user profile in users table
-    const { data: profileData, error: profileError } = await supabase
-      .from('users')
-      .insert([
-        {
-          id: authData.user.id,
-          email,
-          line_id: line_id || null,
-          birthdate: birthdate || null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-      ]);
+    // Create user profile in users table.
+    // On some setups, FK checks can race briefly after auth.signUp, so retry a few times.
+    let profileError: { code?: string; message?: string } | null = null;
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const { error } = await supabase
+        .from('users')
+        .upsert(
+          {
+            id: authData.user.id,
+            email,
+            line_id: line_id || null,
+            birthdate: birthdate || null,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        );
+
+      if (!error) {
+        profileError = null;
+        break;
+      }
+
+      profileError = error;
+
+      // 23503 = foreign_key_violation (usually auth.users row not visible yet)
+      if (error.code === '23503' && attempt < 3) {
+        await sleep(350 * attempt);
+        continue;
+      }
+
+      break;
+    }
 
     if (profileError) {
-      // Log the error and continue - the profile can be created lazily on first login
-      console.error('Failed to create user profile during signup:', profileError);
-      // Don't fail the signup, just continue with minimal profile setup
+      // Don't fail signup; profile can be created lazily on first authenticated flow.
+      console.warn('User profile creation deferred during signup:', profileError);
     }
 
     // Create response with session data

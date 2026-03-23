@@ -25,6 +25,13 @@ export default function LoginContent() {
         if (modeParam === 'signup' || modeParam === 'login') {
             setMode(modeParam);
         }
+
+        const storedLineUserId = localStorage.getItem('lineUserId');
+        if (storedLineUserId) {
+            setRawLineUserId(storedLineUserId);
+            setMode('signup');
+            localStorage.removeItem('lineUserId');
+        }
     }, [searchParams]);
 
     const handleModeSwitch = (newMode: 'login' | 'signup') => {

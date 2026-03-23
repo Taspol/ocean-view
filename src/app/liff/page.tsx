@@ -63,6 +63,7 @@ export default function LIFFDashboard() {
 
                 if (response.status === 404) {
                     setStatus('No linked account found, redirecting to signup...');
+                    localStorage.setItem('lineUserId', rawLineUserId);
                     const params = new URLSearchParams({
                         mode: 'signup',
                         redirectTo: '/dashboard',
