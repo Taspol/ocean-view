@@ -16,7 +16,12 @@ interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
   error: string | null;
-  signUp: (email: string, password: string, lineId?: string, birthdate?: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    lineId?: string,
+    birthdate?: string
+  ) => Promise<{ requiresEmailConfirmation: boolean }>;
   logIn: (email: string, password: string) => Promise<void>;
   logOut: () => Promise<void>;
   updateProfile: (profileData: { email?: string; line_id?: string; birthdate?: string }) => Promise<UserProfile>;
@@ -91,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string,
     lineId?: string,
     birthdate?: string
-  ) => {
+  ): Promise<{ requiresEmailConfirmation: boolean }> => {
     try {
       setError(null);
       const response = await fetch('/api/auth/signup', {
@@ -105,6 +110,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         throw new Error(data.error || 'Signup failed');
+      }
+
+      const requiresEmailConfirmation = !!data.requiresEmailConfirmation;
+
+      if (requiresEmailConfirmation) {
+        // No active session yet; user must confirm email first.
+        setUser(null);
+        return { requiresEmailConfirmation: true };
       }
 
       // Wait a moment for cookie to be set
@@ -133,6 +146,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         setUser(minimalProfile);
       }
+
+      return { requiresEmailConfirmation: false };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Signup failed';
       setError(message);

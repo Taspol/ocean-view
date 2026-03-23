@@ -17,6 +17,7 @@ export default function LoginContent() {
     const [birthdate, setBirthdate] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
     const [lineConnecting, setLineConnecting] = useState(false);
 
     useEffect(() => {
@@ -44,6 +45,7 @@ export default function LoginContent() {
     const handleModeSwitch = (newMode: 'login' | 'signup') => {
         setMode(newMode);
         setError('');
+        setSuccessMessage('');
         clearError();
         // Reset form
         setEmail('');
@@ -94,6 +96,7 @@ export default function LoginContent() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setSuccessMessage('');
         clearError();
 
         // Validate required fields
@@ -124,6 +127,11 @@ export default function LoginContent() {
                 console.log('Login successful, redirecting to:', redirectTo);
             } else {
                 const result = await signUp(email, password, rawLineUserId || undefined, birthdate || undefined);
+                if (result.requiresEmailConfirmation) {
+                    setLoading(false);
+                    setSuccessMessage('Account created successfully. Please check your email and confirm your account before logging in.');
+                    return;
+                }
                 console.log('Signup successful, redirecting to:', redirectTo);
             }
             
@@ -267,6 +275,20 @@ export default function LoginContent() {
                     )}
 
                     {displayError && <div className={styles.errorMsg}>{displayError}</div>}
+                    {successMessage && (
+                        <div
+                            style={{
+                                fontSize: '0.85rem',
+                                color: '#065f46',
+                                background: '#ecfdf5',
+                                border: '1px solid #a7f3d0',
+                                borderRadius: '8px',
+                                padding: '10px 14px',
+                            }}
+                        >
+                            {successMessage}
+                        </div>
+                    )}
 
                     <button 
                         type="submit" 

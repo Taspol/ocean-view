@@ -64,10 +64,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.APP_URL ||
+      (process.env.NODE_ENV === 'production'
+        ? 'https://oceanview.taspolsd.dev'
+        : 'http://localhost:3000');
+
     // Create auth user
     const { data: authData, error: authError } = await anon.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${appUrl}/login`,
+      },
     });
 
     if (authError) {
@@ -155,6 +165,7 @@ export async function POST(request: NextRequest) {
       { 
         message: 'User created successfully',
         user: authData.user,
+        requiresEmailConfirmation: !authData.session,
       },
       { status: 201 }
     );
