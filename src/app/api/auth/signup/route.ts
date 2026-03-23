@@ -30,6 +30,25 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function waitForAuthUser(
+  admin: any,
+  userId: string,
+  maxAttempts = 6
+) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const { data, error } = await admin.auth.admin.getUserById(userId);
+    if (!error && data.user) {
+      return true;
+    }
+
+    if (attempt < maxAttempts) {
+      await sleep(300 * attempt);
+    }
+  }
+
+  return false;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body: SignupRequest = await request.json();
@@ -75,35 +94,43 @@ export async function POST(request: NextRequest) {
         message: 'SUPABASE_SERVICE_ROLE_KEY is required for profile upsert during signup',
       };
     } else {
-      // On some setups, FK checks can race briefly after auth.signUp, so retry a few times.
-      for (let attempt = 1; attempt <= 3; attempt += 1) {
-        const { error } = await admin
-          .from('users')
-          .upsert(
-            {
-              id: authData.user.id,
-              email,
-              line_id: line_id || null,
-              birthdate: birthdate || null,
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: 'id' }
-          );
+      const authUserVisible = await waitForAuthUser(admin, authData.user.id);
 
-        if (!error) {
-          profileError = null;
+      if (!authUserVisible) {
+        profileError = {
+          code: 'AUTH_USER_NOT_VISIBLE',
+          message: 'Auth user not visible yet for profile upsert',
+        };
+      } else {
+        // Even after visibility check, keep retries for transient FK checks.
+        for (let attempt = 1; attempt <= 5; attempt += 1) {
+          const { error } = await admin
+            .from('users')
+            .upsert(
+              {
+                id: authData.user.id,
+                email,
+                line_id: line_id || null,
+                birthdate: birthdate || null,
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'id' }
+            );
+
+          if (!error) {
+            profileError = null;
+            break;
+          }
+
+          profileError = error;
+
+          if (error.code === '23503' && attempt < 5) {
+            await sleep(300 * attempt);
+            continue;
+          }
+
           break;
         }
-
-        profileError = error;
-
-        // 23503 = foreign_key_violation (usually auth.users row not visible yet)
-        if (error.code === '23503' && attempt < 3) {
-          await sleep(350 * attempt);
-          continue;
-        }
-
-        break;
       }
     }
 
