@@ -13,10 +13,10 @@ export default function LIFFDashboard() {
 
         const startLiffLoginFlow = async () => {
             try {
-                const liffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID;
+                const liffId = process.env.NEXT_PUBLIC_LIFF_LOGIN_ID;
 
                 if (!liffId) {
-                    throw new Error('Missing NEXT_PUBLIC_LINE_LIFF_ID in environment');
+                    throw new Error('Missing NEXT_PUBLIC_LIFF_LOGIN_ID in environment');
                 }
 
                 const liffModule = await import('@line/liff');
@@ -25,7 +25,15 @@ export default function LIFFDashboard() {
                 await liff.init({ liffId });
 
                 if (!liff.isLoggedIn()) {
-                    liff.login({ redirectUri: window.location.href });
+                    const isHttps = window.location.protocol === 'https:';
+                    const isLocalhost = window.location.hostname === 'localhost';
+
+                    if (!isHttps && !isLocalhost) {
+                        throw new Error('LINE Login requires an HTTPS LIFF endpoint. Use an HTTPS tunnel URL and update LIFF Endpoint URL in LINE Developers Console.');
+                    }
+
+                    const redirectUri = `${window.location.origin}/liff`;
+                    liff.login({ redirectUri });
                     return;
                 }
 
@@ -33,8 +41,9 @@ export default function LIFFDashboard() {
                 const profile = await liff.getProfile();
                 const lineId = profile.userId;
                 const idToken = liff.getIDToken();
+                const accessToken = liff.getAccessToken();
 
-                if (!lineId || !idToken) {
+                if (!lineId || (!idToken && !accessToken)) {
                     throw new Error('Unable to read LINE user ID from profile');
                 }
 
@@ -42,7 +51,7 @@ export default function LIFFDashboard() {
                 const response = await fetch('/api/auth/line/session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ lineId, idToken }),
+                    body: JSON.stringify({ lineId, idToken, accessToken }),
                     credentials: 'include',
                 });
 

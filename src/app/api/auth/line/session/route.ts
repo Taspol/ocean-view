@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 interface LineSessionRequest {
   lineId?: string;
   idToken?: string;
+  accessToken?: string;
 }
 
 function getSupabaseClients() {
@@ -30,48 +31,73 @@ export async function POST(request: NextRequest) {
     const body: LineSessionRequest = await request.json();
     const lineId = body.lineId?.trim();
     const idToken = body.idToken?.trim();
+    const accessToken = body.accessToken?.trim();
 
-    if (!lineId || !idToken) {
+    if (!lineId || (!idToken && !accessToken)) {
       return NextResponse.json(
-        { error: 'lineId and idToken are required' },
+        { error: 'lineId and either idToken or accessToken are required' },
         { status: 400 }
       );
     }
 
-    const lineChannelId = process.env.LINE_CHANNEL_ID || process.env.NEXT_PUBLIC_LINE_CHANNEL_ID;
-    if (!lineChannelId) {
-      return NextResponse.json(
-        { error: 'Missing LINE_CHANNEL_ID environment variable' },
-        { status: 500 }
-      );
-    }
+    if (idToken) {
+      const lineChannelId = process.env.LINE_CHANNEL_ID || process.env.NEXT_PUBLIC_LINE_CHANNEL_ID;
+      if (!lineChannelId) {
+        return NextResponse.json(
+          { error: 'Missing LINE_CHANNEL_ID environment variable' },
+          { status: 500 }
+        );
+      }
 
-    const verifyBody = new URLSearchParams({
-      id_token: idToken,
-      client_id: lineChannelId,
-    });
+      const verifyBody = new URLSearchParams({
+        id_token: idToken,
+        client_id: lineChannelId,
+      });
 
-    const verifyResponse = await fetch('https://api.line.me/oauth2/v2.1/verify', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: verifyBody,
-    });
+      const verifyResponse = await fetch('https://api.line.me/oauth2/v2.1/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: verifyBody,
+      });
 
-    if (!verifyResponse.ok) {
-      return NextResponse.json(
-        { error: 'Invalid LINE token' },
-        { status: 401 }
-      );
-    }
+      if (!verifyResponse.ok) {
+        return NextResponse.json(
+          { error: 'Invalid LINE ID token' },
+          { status: 401 }
+        );
+      }
 
-    const verifyPayload = (await verifyResponse.json()) as { sub?: string };
-    if (!verifyPayload.sub || verifyPayload.sub !== lineId) {
-      return NextResponse.json(
-        { error: 'LINE token does not match provided lineId' },
-        { status: 401 }
-      );
+      const verifyPayload = (await verifyResponse.json()) as { sub?: string };
+      if (!verifyPayload.sub || verifyPayload.sub !== lineId) {
+        return NextResponse.json(
+          { error: 'LINE ID token does not match provided lineId' },
+          { status: 401 }
+        );
+      }
+    } else if (accessToken) {
+      const profileResponse = await fetch('https://api.line.me/v2/profile', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!profileResponse.ok) {
+        return NextResponse.json(
+          { error: 'Invalid LINE access token' },
+          { status: 401 }
+        );
+      }
+
+      const profilePayload = (await profileResponse.json()) as { userId?: string };
+      if (!profilePayload.userId || profilePayload.userId !== lineId) {
+        return NextResponse.json(
+          { error: 'LINE access token does not match provided lineId' },
+          { status: 401 }
+        );
+      }
     }
 
     const { admin, anon } = getSupabaseClients();
