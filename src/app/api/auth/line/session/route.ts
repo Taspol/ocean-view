@@ -2,7 +2,6 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface LineSessionRequest {
-  lineId?: string;
   rawLineUserId?: string;
   idToken?: string;
   accessToken?: string;
@@ -30,14 +29,13 @@ function getSupabaseClients() {
 export async function POST(request: NextRequest) {
   try {
     const body: LineSessionRequest = await request.json();
-    const lineId = body.lineId?.trim();
     const rawLineUserId = body.rawLineUserId?.trim();
     const idToken = body.idToken?.trim();
     const accessToken = body.accessToken?.trim();
 
-    if (!lineId || !rawLineUserId || (!idToken && !accessToken)) {
+    if (!rawLineUserId || (!idToken && !accessToken)) {
       return NextResponse.json(
-        { error: 'lineId, rawLineUserId and either idToken or accessToken are required' },
+        { error: 'rawLineUserId and either idToken or accessToken are required' },
         { status: 400 }
       );
     }
@@ -104,42 +102,22 @@ export async function POST(request: NextRequest) {
 
     const { admin, anon } = getSupabaseClients();
 
-    const { data: friendlyProfile, error: friendlyProfileError } = await admin
+    const { data: profile, error: profileError } = await admin
       .from('users')
       .select('id, email, line_id, birthdate, created_at, updated_at')
-      .eq('line_id', lineId)
+      .eq('line_id', rawLineUserId)
       .maybeSingle();
 
-    if (friendlyProfileError) {
+    if (profileError) {
       return NextResponse.json(
-        { error: friendlyProfileError.message || 'Failed to check LINE ID' },
+        { error: profileError.message || 'Failed to check LINE ID' },
         { status: 500 }
       );
     }
 
-    let profile = friendlyProfile;
-
-    // Backward compatibility: allow users already stored with raw LINE user ID.
-    if (!profile && lineId !== rawLineUserId) {
-      const { data: rawProfile, error: rawProfileError } = await admin
-        .from('users')
-        .select('id, email, line_id, birthdate, created_at, updated_at')
-        .eq('line_id', rawLineUserId)
-        .maybeSingle();
-
-      if (rawProfileError) {
-        return NextResponse.json(
-          { error: rawProfileError.message || 'Failed to check raw LINE user ID' },
-          { status: 500 }
-        );
-      }
-
-      profile = rawProfile;
-    }
-
     if (!profile) {
       return NextResponse.json(
-        { needsSignup: true, lineId },
+        { needsSignup: true, rawLineUserId },
         { status: 404 }
       );
     }

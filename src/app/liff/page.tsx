@@ -11,45 +11,6 @@ export default function LIFFDashboard() {
     useEffect(() => {
         let isMounted = true;
 
-        const normalizeLineId = (displayName: string | undefined) => {
-            if (!displayName) return 'lineid';
-
-            // Step 1: Convert to Latin characters where possible, handle common scripts
-            let text = displayName.toLowerCase();
-
-            // Handle common Thai/Asian characters by replacing with placeholder
-            const charMap: { [key: string]: string } = {
-                'ะ': 'a', 'า': 'a', 'ิ': 'i', 'ี': 'i', 'ึ': 'u', 'ู': 'u',
-                'เ': 'e', 'แ': 'ae', 'โ': 'o', 'ไ': 'ai', 'ใ': 'ai', 'ํ': '',
-                'ั': '', '็': '', '์': '', '้': '', '่': '', '๎': '', '๏': '',
-            };
-
-            for (const [thai, latin] of Object.entries(charMap)) {
-                text = text.replace(new RegExp(thai, 'g'), latin);
-            }
-
-            // Step 2: Normalize NFD and remove diacritics
-            text = text
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .toLowerCase();
-
-            // Step 3: Remove non-alphanumeric except dash/underscore
-            text = text
-                .replace(/\s+/g, '_')
-                .replace(/[^a-z0-9._-]/g, '')
-                .replace(/^[_.-]+/, '')
-                .replace(/[_.-]+$/, '')
-                .substring(0, 30);
-
-            // Step 4: Ensure minimum length and readability
-            if (text.length >= 3 && /[a-z]/.test(text)) {
-                return text;
-            }
-
-            return 'user_' + Date.now().toString(36).slice(-5);
-        };
-
         const startLiffLoginFlow = async () => {
             try {
                 const liffId = process.env.NEXT_PUBLIC_LIFF_LOGIN_ID;
@@ -79,7 +40,6 @@ export default function LIFFDashboard() {
                 setStatus('Reading LINE profile...');
                 const profile = await liff.getProfile();
                 const rawLineUserId = profile.userId;
-                const lineId = normalizeLineId(profile.displayName);
                 const idToken = liff.getIDToken();
                 const accessToken = liff.getAccessToken();
 
@@ -91,7 +51,7 @@ export default function LIFFDashboard() {
                 const response = await fetch('/api/auth/line/session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ lineId, rawLineUserId, idToken, accessToken }),
+                    body: JSON.stringify({ rawLineUserId, idToken, accessToken }),
                     credentials: 'include',
                 });
 
@@ -105,7 +65,6 @@ export default function LIFFDashboard() {
                     setStatus('No linked account found, redirecting to signup...');
                     const params = new URLSearchParams({
                         mode: 'signup',
-                        lineId,
                         redirectTo: '/dashboard',
                     });
                     router.replace(`/login?${params.toString()}`);

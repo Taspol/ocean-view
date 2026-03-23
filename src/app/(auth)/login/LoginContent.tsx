@@ -13,22 +13,17 @@ export default function LoginContent() {
     const [mode, setMode] = useState<'login' | 'signup'>('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [lineId, setLineId] = useState('');
+    const [rawLineUserId, setRawLineUserId] = useState('');
     const [birthdate, setBirthdate] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [lineConnecting, setLineConnecting] = useState(false);
 
     useEffect(() => {
         const modeParam = searchParams.get('mode');
-        const lineIdParam = searchParams.get('lineId');
 
         if (modeParam === 'signup' || modeParam === 'login') {
             setMode(modeParam);
-        }
-
-        if (lineIdParam) {
-            setLineId(lineIdParam);
-            setMode('signup');
         }
     }, [searchParams]);
 
@@ -40,6 +35,46 @@ export default function LoginContent() {
         setEmail('');
         setPassword('');
         setBirthdate('');
+    };
+
+    const handleConnectLine = () => {
+        setLineConnecting(true);
+        
+        // Open LIFF connect window
+        const liffConnectUrl = `${window.location.origin}/liff/connect`;
+        const width = 500;
+        const height = 600;
+        const left = (window.innerWidth - width) / 2;
+        const top = (window.innerHeight - height) / 2;
+        
+        const popup = window.open(
+            liffConnectUrl,
+            'LINE_CONNECT',
+            `width=${width},height=${height},left=${left},top=${top}`
+        );
+
+        // Poll for localStorage value set by the popup
+        const checkInterval = setInterval(() => {
+            const lineUserId = localStorage.getItem('lineUserId');
+            if (lineUserId) {
+                clearInterval(checkInterval);
+                setRawLineUserId(lineUserId);
+                localStorage.removeItem('lineUserId');
+                setLineConnecting(false);
+                if (popup && !popup.closed) {
+                    popup.close();
+                }
+            }
+        }, 500);
+
+        // Timeout after 2 minutes
+        setTimeout(() => {
+            clearInterval(checkInterval);
+            setLineConnecting(false);
+            if (popup && !popup.closed) {
+                popup.close();
+            }
+        }, 120000);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -74,7 +109,7 @@ export default function LoginContent() {
                 const result = await logIn(email, password);
                 console.log('Login successful, redirecting to:', redirectTo);
             } else {
-                const result = await signUp(email, password, lineId || undefined, birthdate || undefined);
+                const result = await signUp(email, password, rawLineUserId || undefined, birthdate || undefined);
                 console.log('Signup successful, redirecting to:', redirectTo);
             }
             
@@ -154,16 +189,54 @@ export default function LoginContent() {
                     {mode === 'signup' && (
                         <>
                             <div className={styles.field}>
-                                <label className={styles.label}>LINE ID <span style={{ color: '#999', fontSize: '0.8em' }}>(auto-filled from LINE, you can edit)</span></label>
-                                <input
-                                    type="text"
-                                    className={styles.input}
-                                    placeholder="your_line_id"
-                                    value={lineId}
-                                    onChange={(e) => setLineId(e.target.value)}
-                                    disabled={loading}
-                                />
-                                <p style={{ fontSize: '0.75rem', color: '#999', margin: '0.25rem 0 0 0' }}>This will be your unique LINE identifier in our system</p>
+                                <label className={styles.label}>LINE Account <span style={{ color: '#999', fontSize: '0.8em' }}>(optional)</span></label>
+                                {rawLineUserId ? (
+                                    <div
+                                        style={{
+                                            padding: '12px 14px',
+                                            border: '1px solid #10B981',
+                                            borderRadius: '8px',
+                                            background: '#f0fdf4',
+                                            color: '#10B981',
+                                            fontWeight: 600,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '8px',
+                                            minHeight: '44px',
+                                        }}
+                                    >
+                                        <span>✓ Connected to LINE</span>
+                                    </div>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={handleConnectLine}
+                                        disabled={loading || lineConnecting}
+                                        style={{
+                                            padding: '12px 14px',
+                                            border: '2px solid #0ea5e9',
+                                            borderRadius: '8px',
+                                            background: '#f0f9ff',
+                                            color: '#0ea5e9',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            minHeight: '44px',
+                                            width: '100%',
+                                            fontSize: '1rem',
+                                            transition: 'all 0.2s',
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = '#0ea5e9';
+                                            e.currentTarget.style.color = 'white';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = '#f0f9ff';
+                                            e.currentTarget.style.color = '#0ea5e9';
+                                        }}
+                                    >
+                                        {lineConnecting ? 'Connecting...' : 'Connect LINE'}
+                                    </button>
+                                )}
                             </div>
 
                             <div className={styles.field}>
