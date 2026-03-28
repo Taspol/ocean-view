@@ -282,15 +282,15 @@ export default function ScrollPhoneLanding() {
           ref={gridContainerRef}
           className={
             phonePinMode === 'fixed'
-              ? 'fixed left-0 right-0 top-7 z-20 md:top-14'
+              ? 'fixed left-0 right-0 top-7 z-20 md:top-12'
               : phonePinMode === 'end'
                 ? 'absolute bottom-0 left-0 right-0'
                 : 'relative'
           }
           style={phonePinMode === 'fixed' ? { width: '100%' } : undefined}
         >
-          <div className="grid h-full w-full grid-cols-1 gap-3 px-4 sm:px-6 md:grid-cols-[1.1fr_1fr] md:gap-10 lg:px-10">
-            <div ref={textColumnRef} className="flex min-h-[36svh] items-start px-4 pt-2 sm:min-h-[44svh] sm:px-8 sm:pt-4 md:h-[100svh] md:items-center md:px-20 md:pt-0">
+          <div className="grid h-full w-full grid-cols-1 gap-3 px-4 sm:px-6 md:grid-cols-[1.1fr_1fr] md:gap-4 lg:gap-6 lg:px-10">
+            <div ref={textColumnRef} className="flex min-h-[36svh] items-start px-4 pt-2 sm:min-h-[44svh] sm:px-8 sm:pt-4 md:h-[100svh] md:items-center md:justify-end md:pl-10 md:pr-4 md:pt-0 md:-translate-y-1">
               <div>
             <div className="mb-6 flex items-center gap-3">
               {STORY_STEPS.map((step, index) => (
@@ -343,9 +343,9 @@ export default function ScrollPhoneLanding() {
 
           <div ref={phoneColumnRef} className="relative mt-3 h-[70svh] md:mt-0 md:h-full">
             <div className="hidden h-[100svh] md:block" />
-            <div className="md:absolute md:left-0 md:right-0 md:top-16">
+            <div className="md:absolute md:left-0 md:right-0 md:top-10">
               <div ref={phoneFrameRef} className="flex h-[min(44svh,340px)] min-[376px]:h-[min(48svh,390px)] items-start justify-center pt-0 sm:h-[min(60svh,520px)] md:h-[calc(100svh-4rem)] md:items-center md:pt-0">
-                <div className="translate-y-0 origin-top scale-[0.82] min-[376px]:scale-[0.9] sm:scale-95 md:scale-100 md:-translate-y-1">
+                <div className="translate-y-0 origin-top scale-[0.82] min-[376px]:scale-[0.9] sm:scale-95 md:scale-100 md:-translate-x-3 md:-translate-y-1">
                   <PhoneFrame activeIndex={activeIndex} />
                 </div>
               </div>

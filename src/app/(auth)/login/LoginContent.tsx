@@ -9,7 +9,7 @@ export default function LoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirectTo = searchParams.get('redirectTo') || '/dashboard';
-    const { logIn, signUp, error: authError, clearError } = useAuth();
+    const { user, loading: authLoading, logIn, signUp, error: authError, clearError } = useAuth();
     const [mode, setMode] = useState<'login' | 'signup'>('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -41,6 +41,12 @@ export default function LoginContent() {
             localStorage.removeItem('lineUserId');
         }
     }, [searchParams]);
+
+    useEffect(() => {
+        if (!authLoading && user) {
+            router.replace('/dashboard');
+        }
+    }, [authLoading, user, router]);
 
     const handleModeSwitch = (newMode: 'login' | 'signup') => {
         setMode(newMode);

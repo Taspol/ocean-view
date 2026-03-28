@@ -1,9 +1,8 @@
-const CACHE_NAME = 'ocean-fishing-v1';
-const TILE_CACHE = 'ocean-fishing-tiles-v1';
-const RUNTIME_CACHE = 'ocean-fishing-runtime-v1';
+const CACHE_NAME = 'ocean-fishing-v2';
+const TILE_CACHE = 'ocean-fishing-tiles-v2';
+const RUNTIME_CACHE = 'ocean-fishing-runtime-v2';
 
 const urlsToCache = [
-  '/',
   '/maps',
   '/dashboard',
   '/prediction',
@@ -76,7 +75,7 @@ self.addEventListener('fetch', (event) => {
 
   // Handle navigation requests
   if (request.mode === 'navigate') {
-    event.respondWith(cacheFirstWithNetworkFallback(request));
+    event.respondWith(networkFirstWithFallback(request));
     return;
   }
 
