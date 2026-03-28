@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/authContext';
-import styles from './login.module.css';
+import TravelConnectSignIn1 from '@/components/ui/travel-connect-signin-1';
 
 export default function LoginContent() {
     const router = useRouter();
@@ -152,159 +152,25 @@ export default function LoginContent() {
         }
     };
 
-    const displayError = error || authError;
+    const displayError = error || authError || undefined;
 
     return (
-        <div className={styles.page}>
-            <div className={styles.card}>
-                <div className={styles.brand}>
-                    <h1 className={styles.brandName}>OceanView</h1>
-                    <p className={styles.brandSub}>Smart Fishery Intelligence</p>
-                </div>
-
-                <div className={styles.tabs}>
-                    <button
-                        className={`${styles.tab} ${mode === 'login' ? styles.tabActive : ''}`}
-                        onClick={() => handleModeSwitch('login')}
-                        disabled={loading}
-                    >
-                        Log In
-                    </button>
-                    <button
-                        className={`${styles.tab} ${mode === 'signup' ? styles.tabActive : ''}`}
-                        onClick={() => handleModeSwitch('signup')}
-                        disabled={loading}
-                    >
-                        Sign Up
-                    </button>
-                </div>
-
-                <form className={styles.form} onSubmit={handleSubmit}>
-                    <div className={styles.field}>
-                        <label className={styles.label}>Email Address <span style={{ color: 'red' }}>*</span></label>
-                        <input
-                            type="email"
-                            className={styles.input}
-                            placeholder="you@example.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            autoComplete="email"
-                            disabled={loading}
-                            required
-                        />
-                    </div>
-
-                    <div className={styles.field}>
-                        <label className={styles.label}>Password <span style={{ color: 'red' }}>*</span></label>
-                        <input
-                            type="password"
-                            className={styles.input}
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                            disabled={loading}
-                            required
-                        />
-                    </div>
-
-                    {mode === 'signup' && (
-                        <>
-                            <div className={styles.field}>
-                                <label className={styles.label}>LINE Account <span style={{ color: '#999', fontSize: '0.8em' }}>(optional)</span></label>
-                                {rawLineUserId ? (
-                                    <div
-                                        style={{
-                                            padding: '12px 14px',
-                                            border: '1px solid #10B981',
-                                            borderRadius: '8px',
-                                            background: '#f0fdf4',
-                                            color: '#10B981',
-                                            fontWeight: 600,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            minHeight: '44px',
-                                        }}
-                                    >
-                                        <span>✓ Connected to LINE</span>
-                                    </div>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        onClick={handleConnectLine}
-                                        disabled={loading || lineConnecting}
-                                        style={{
-                                            padding: '12px 14px',
-                                            border: '2px solid #0ea5e9',
-                                            borderRadius: '8px',
-                                            background: '#f0f9ff',
-                                            color: '#0ea5e9',
-                                            fontWeight: 600,
-                                            cursor: 'pointer',
-                                            minHeight: '44px',
-                                            width: '100%',
-                                            fontSize: '1rem',
-                                            transition: 'all 0.2s',
-                                        }}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.background = '#0ea5e9';
-                                            e.currentTarget.style.color = 'white';
-                                        }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.background = '#f0f9ff';
-                                            e.currentTarget.style.color = '#0ea5e9';
-                                        }}
-                                    >
-                                        {lineConnecting ? 'Connecting...' : 'Connect LINE'}
-                                    </button>
-                                )}
-                            </div>
-
-                            <div className={styles.field}>
-                                <label className={styles.label}>Birthdate <span style={{ color: '#999', fontSize: '0.8em' }}>(optional)</span></label>
-                                <input
-                                    type="date"
-                                    className={styles.input}
-                                    value={birthdate}
-                                    onChange={(e) => setBirthdate(e.target.value)}
-                                    disabled={loading}
-                                />
-                            </div>
-                        </>
-                    )}
-
-                    {displayError && <div className={styles.errorMsg}>{displayError}</div>}
-                    {successMessage && (
-                        <div
-                            style={{
-                                fontSize: '0.85rem',
-                                color: '#065f46',
-                                background: '#ecfdf5',
-                                border: '1px solid #a7f3d0',
-                                borderRadius: '8px',
-                                padding: '10px 14px',
-                            }}
-                        >
-                            {successMessage}
-                        </div>
-                    )}
-
-                    <button 
-                        type="submit" 
-                        className={styles.submitBtn}
-                        disabled={loading}
-                    >
-                        {loading ? 'Processing...' : (mode === 'login' ? 'Log In' : 'Create Account')}
-                    </button>
-
-                    {mode === 'login' && (
-                        <p className={styles.forgotLink}>
-                            <a href="#">Forgot password?</a>
-                        </p>
-                    )}
-                </form>
-            </div>
-        </div>
+        <TravelConnectSignIn1
+            mode={mode}
+            setMode={handleModeSwitch}
+            email={email}
+            setEmail={setEmail}
+            password={password}
+            setPassword={setPassword}
+            birthdate={birthdate}
+            setBirthdate={setBirthdate}
+            loading={loading}
+            lineConnected={Boolean(rawLineUserId)}
+            lineConnecting={lineConnecting}
+            onConnectLine={handleConnectLine}
+            onSubmit={handleSubmit}
+            error={displayError}
+            successMessage={successMessage}
+        />
     );
 }

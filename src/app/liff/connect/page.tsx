@@ -86,28 +86,60 @@ export default function LIFFConnect() {
   return (
     <main
       style={{
-        flex: 1,
+        minHeight: '100svh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         padding: '24px 16px',
-        background: 'var(--background)',
-        color: 'var(--foreground)',
+        background: '#ffffff',
+        color: '#0f172a',
       }}
     >
       <section
         style={{
           width: '100%',
           maxWidth: '420px',
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: '12px',
-          padding: '20px',
+          background: '#ffffff',
+          border: '1px solid #cbd5e1',
+          borderRadius: '14px',
+          padding: '24px',
+          boxShadow: '0 12px 32px -20px rgba(15, 23, 42, 0.35)',
           textAlign: 'center',
         }}
       >
-        <h1 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>Connecting to LINE</h1>
-        <p style={{ margin: 0, opacity: 0.8 }}>{error || status}</p>
+        <h1 style={{ fontSize: '1.375rem', marginBottom: '8px', color: '#0f172a' }}>Connecting to LINE</h1>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '10px',
+            marginTop: '8px',
+          }}
+        >
+          {!error && (
+            <span
+              aria-hidden="true"
+              style={{
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                border: '2px solid rgba(15, 23, 42, 0.2)',
+                borderTopColor: '#0284c7',
+                animation: 'line-connect-spin 0.7s linear infinite',
+              }}
+            />
+          )}
+          <p style={{ margin: 0, color: error ? '#b91c1c' : '#334155', fontWeight: 500 }}>{error || status}</p>
+        </div>
+
+        <style jsx>{`
+          @keyframes line-connect-spin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+        `}</style>
       </section>
     </main>
   );

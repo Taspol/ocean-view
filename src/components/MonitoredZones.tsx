@@ -63,6 +63,7 @@ export default function MonitoredZones() {
                         type="text"
                         className={styles.searchInput}
                         placeholder="Search for a new zone to monitor... (e.g. 'Delta')"
+                        aria-label="Search for zone to monitor"
                         value={searchQuery}
                         onChange={(e) => {
                             setSearchQuery(e.target.value);
@@ -75,10 +76,15 @@ export default function MonitoredZones() {
                         <div className={styles.searchDropdown}>
                             {searchResults.length > 0 ? (
                                 searchResults.map(zone => (
-                                    <div key={zone.id} className={styles.dropdownItem} onClick={() => handleAddZone(zone.id)}>
+                                    <button
+                                        key={zone.id}
+                                        type="button"
+                                        className={styles.dropdownItem}
+                                        onClick={() => handleAddZone(zone.id)}
+                                    >
                                         <span className={styles.dropdownName}>{zone.name}</span>
                                         <span className={styles.dropdownChance}>{zone.chance}</span>
-                                    </div>
+                                    </button>
                                 ))
                             ) : (
                                 <div className={styles.emptyState}>No matching zones found.</div>
@@ -116,6 +122,7 @@ export default function MonitoredZones() {
                                             setOpenMenuId(openMenuId === spot.id ? null : spot.id);
                                         }}
                                         title="More options"
+                                        aria-label={`More options for ${spot.name}`}
                                     >
                                         ⋮
                                     </button>

@@ -1,7 +1,7 @@
 .container {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: 20px;
   width: 100%;
 }
 
@@ -22,7 +22,7 @@
 .mainColumn {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .searchHeader {
@@ -36,18 +36,20 @@
 .searchInput {
   flex: 1;
   padding: 12px 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
   font-size: 1rem;
   font-family: inherit;
-  color: #1e293b;
+  color: #0f172a;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
+  min-height: 44px;
+  background: #ffffff;
 }
 
 .searchInput:focus {
-  border-color: #0ea5e9;
-  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
 }
 
 .searchDropdown {
@@ -58,7 +60,7 @@
   margin-top: 4px;
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 12px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   max-height: 250px;
   overflow-y: auto;
@@ -68,6 +70,11 @@
   padding: 12px 16px;
   cursor: pointer;
   display: flex;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  font-family: inherit;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #f1f5f9;
@@ -80,6 +87,11 @@
 
 .dropdownItem:hover {
   background-color: #f8fafc;
+}
+
+.dropdownItem:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
 }
 
 .dropdownName {
@@ -107,13 +119,15 @@
   justify-content: space-between;
   background: white;
   padding: 16px;
-  border: 1px solid #d1d5db;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.3s;
+  border: 1px solid #d9e1ec;
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+  transition: box-shadow 0.2s, transform 0.2s;
 }
 
 .configItemRow:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1);
 }
 
 .zoneInfo {
@@ -140,18 +154,19 @@
 }
 
 .rateLabel {
-  font-size: 1rem;
+  font-size: 0.75rem;
   color: #64748b;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   text-transform: uppercase;
-  letter-spacing: 0.025em;
+  letter-spacing: 0.05em;
   font-weight: 600;
 }
 
 .rateValue {
-  font-weight: 600;
-  font-size: 1.125rem;
-  color: #0369a1;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #0b5fff;
+  font-variant-numeric: tabular-nums;
 }
 
 .actions {
@@ -162,20 +177,29 @@
 }
 
 .actionBtn {
-  padding: 10px 24px;
+  padding: 10px 16px;
   color: white;
-  font-weight: 500;
-  font-size: 1rem;
-  background: #0369a1;
+  font-weight: 600;
+  font-size: 0.9rem;
+  background: linear-gradient(135deg, #0284c7, #2563eb);
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  min-height: 44px;
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.25);
   transition: all 0.2s;
   font-family: inherit;
 }
 
 .actionBtn:hover {
-  background: #075985;
+  box-shadow: 0 10px 22px rgba(2, 132, 199, 0.3);
+}
+
+.actionBtn:focus-visible,
+.moreBtn:focus-visible,
+.deleteOption:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .menuContainer {
@@ -183,12 +207,12 @@
 }
 
 .moreBtn {
-  padding: 4px 8px;
+  padding: 6px 8px;
   color: #64748b;
   background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   line-height: 1;
   transition: all 0.2s;
   display: flex;
@@ -209,7 +233,7 @@
   margin-top: 4px;
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border-radius: 10px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   min-width: 120px;
   z-index: 20;
@@ -241,9 +265,9 @@
   gap: 16px;
   background: white;
   padding: 24px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  border: 1px solid #d9e1ec;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
 }
 
 .sideTitle {
@@ -300,4 +324,23 @@
   font-weight: 500;
   color: #94a3b8;
   margin-top: 2px;
+}
+
+@media (max-width: 860px) {
+  .configItemRow {
+    display: grid;
+    gap: 14px;
+  }
+
+  .zoneRate {
+    text-align: left;
+    border-left: none;
+    border-top: 1px solid #e2e8f0;
+    padding: 12px 0 0;
+  }
+
+  .actions {
+    margin-left: 0;
+    justify-content: flex-start;
+  }
 }

@@ -5,11 +5,16 @@ import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
 import styles from '../app/page.module.css';
 
-const AUTH_ROUTES = ['/login', '/register', '/liff'];
+const STANDALONE_ROUTES = ['/', '/login', '/register', '/liff'];
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const isAuthPage = AUTH_ROUTES.some(r => pathname.startsWith(r));
+    const isStandalonePage = STANDALONE_ROUTES.some((route) => {
+        if (route === '/') {
+            return pathname === '/';
+        }
+        return pathname.startsWith(route);
+    });
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     // Close sidebar when route changes
@@ -29,7 +34,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    if (isAuthPage) {
+    if (isStandalonePage) {
         return <>{children}</>;
     }
 

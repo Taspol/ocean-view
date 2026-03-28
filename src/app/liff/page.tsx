@@ -113,7 +113,38 @@ export default function LIFFDashboard() {
                 }}
             >
                 <h1 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>LINE Login</h1>
-                <p style={{ margin: 0, opacity: 0.8 }}>{error || status}</p>
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '10px',
+                        marginTop: '8px',
+                    }}
+                >
+                    {!error && (
+                        <span
+                            aria-hidden="true"
+                            style={{
+                                width: '16px',
+                                height: '16px',
+                                borderRadius: '50%',
+                                border: '2px solid rgba(148, 163, 184, 0.4)',
+                                borderTopColor: '#0ea5e9',
+                                animation: 'line-login-spin 0.7s linear infinite',
+                            }}
+                        />
+                    )}
+                    <p style={{ margin: 0, opacity: 0.8 }}>{error || status}</p>
+                </div>
+
+                <style jsx>{`
+                    @keyframes line-login-spin {
+                        to {
+                            transform: rotate(360deg);
+                        }
+                    }
+                `}</style>
             </section>
         </main>
     );

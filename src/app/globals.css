@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --card: #f5f5f4;
   --ring: #6366f1;
@@ -15,7 +19,7 @@
   --primary: #6366f1;
   --sidebar: #d6d3d1;
   --font-mono: Roboto Mono, monospace;
-  --font-sans: Plus Jakarta Sans, sans-serif;
+  --font-sans: var(--font-neuton), serif;
   --secondary: #d6d3d1;
   --background: #e7e5e4;
   --font-serif: Lora, serif;
@@ -41,6 +45,7 @@
   --destructive-foreground: #ffffff;
   --sidebar-accent-foreground: #374151;
   --sidebar-primary-foreground: #ffffff;
+  --sidebar-background: var(--sidebar);
 
   /* Map Specific */
   --map-grid: rgba(0, 0, 0, 0.05);
@@ -85,6 +90,7 @@
   --destructive-foreground: #1e1b18;
   --sidebar-accent-foreground: #d1d5db;
   --sidebar-primary-foreground: #1e1b18;
+  --sidebar-background: var(--sidebar);
 
   /* Map Specific Dark Settings */
   --map-grid: rgba(255, 255, 255, 0.05);
@@ -226,6 +232,25 @@ a {
   animation: float 6s ease-in-out infinite;
 }
 
+@keyframes fadeOutLabel {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(0.5rem) scale(0.95);
+  }
+}
+
+.animate-fadeOut {
+  animation: fadeOutLabel 2.2s ease-out forwards;
+}
+
 /* Layout Basics */
 .app-container {
   display: flex;
@@ -266,3 +291,13 @@ a {
 .ol-attribution button { display: none !important; }
 .ol-attribution ul { text-shadow: 0 1px 2px rgba(0,0,0,0.8); font-size: 0.6rem; color: white; margin: 0; padding: 4px 8px; }
 .ol-attribution a { color: #fff !important; }
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

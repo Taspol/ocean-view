@@ -201,3 +201,57 @@
 .switchBtn:hover {
   text-decoration: underline;
 }
+
+.lineConnectBtn {
+  padding: 12px 14px;
+  border: 2px solid #0ea5e9;
+  border-radius: 8px;
+  background: #f0f9ff;
+  color: #0ea5e9;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  width: 100%;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.lineConnectBtn:hover:not(:disabled) {
+  background: #0ea5e9;
+  color: #ffffff;
+}
+
+.lineConnectBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.lineConnectBtnConnecting {
+  background: #0ea5e9;
+  color: #ffffff;
+}
+
+.lineConnectingStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  color: #0369a1;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(3, 105, 161, 0.25);
+  border-top-color: #0369a1;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

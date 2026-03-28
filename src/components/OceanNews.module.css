@@ -1,40 +1,76 @@
 .container {
   width: 100%;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #d9e1ec;
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
   overflow: hidden;
-  margin-bottom: 32px;
 }
 
-.header {
+.toolbar {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  background: #f8fafc;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #f8fbff;
   border-bottom: 1px solid #e2e8f0;
 }
 
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .liveDot {
-  display: inline-block;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #64748b;
+  background: #ef4444;
+  box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.15);
 }
 
-.headerLabel {
-  font-weight: 700;
-  font-size: 0.875rem;
+.filterGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filterBtn {
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #d0dae8;
+  background: #ffffff;
   color: #1e293b;
-  letter-spacing: 0.01em;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
 }
 
-.headerSub {
-  margin-left: auto;
-  font-size: 0.75rem;
-  color: #94a3b8;
+.filterBtn:hover {
+  border-color: #9fb3ce;
+  background: #f1f5f9;
+}
+
+.filterBtnActive {
+  background: #0b5fff;
+  border-color: #0b5fff;
+  color: #ffffff;
+}
+
+.filterBtn:focus-visible,
+.cardButton:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .newsList {
@@ -43,115 +79,97 @@
 }
 
 .newsCard {
-  padding: 14px 20px;
-  border-bottom: 1px solid #f1f5f9;
-  cursor: pointer;
-  transition: background 0.15s;
+  border-top: 1px solid #edf2f8;
 }
 
-.newsCard:last-child {
-  border-bottom: none;
-}
-
-.newsCard:hover {
-  background: #f8fafc;
-}
-
-.newsCard.expanded {
-  background: #f8fafc;
-}.container {
+.cardButton {
   width: 100%;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  overflow: hidden;
-  margin-bottom: 16px;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 10px 14px;
+  cursor: pointer;
+  display: grid;
+  gap: 5px;
+  font-family: inherit;
 }
 
-.header {
+.cardButton:hover {
+  background: #f8fbff;
+}
+
+.cardMeta {
   display: flex;
+  justify-content: space-between;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
-  background: #f8fafc;
-  border-bottom: 1px solid #e2e8f0;
 }
 
-.headerLabel {
-  font-weight: 700;
+.feedType {
+  color: #334155;
   font-size: 0.75rem;
-  color: #1e293b;
-  letter-spacing: 0.01em;
-}
-
-.headerSub {
-  margin-left: auto;
-  font-size: 0.7rem;
-  color: #94a3b8;
-}
-
-.newsCard {
-  padding: 12px 12px;
-  border-bottom: 1px solid #f1f5f9;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.newsCard:active {
-  background: #f8fafc;
-}
-
-@media (min-width: 768px) {
-  .container {
-    margin-bottom: 32px;
-  }
-
-  .header {
-    padding: 12px 20px;
-  }
-
-  .headerLabel {
-    font-size: 0.875rem;
-  }
-
-  .headerSub {
-    font-size: 0.75rem;
-  }
-
-  .newsCard {
-    padding: 14px 20px;
-  }
-
-  .newsCard:hover {
-    background: #f8fafc;
-  }
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .time {
-  font-size: 0.75rem;
-  color: #94a3b8;
+  color: #64748b;
+  font-size: 0.72rem;
 }
 
 .title {
-  font-size: 0.9rem;
+  color: #0f172a;
+  font-size: 0.86rem;
   font-weight: 600;
-  color: #1e293b;
-  line-height: 1.4;
+  line-height: 1.35;
+  padding-right: 28px;
 }
 
 .chevron {
-  font-size: 0.6rem;
-  color: #94a3b8;
-  flex-shrink: 0;
-  margin-top: 4px;
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  color: #64748b;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .summary {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #e2e8f0;
-  font-size: 0.85rem;
-  color: #475569;
-  line-height: 1.6;
-  padding-left: calc(1.25rem + 12px); /* align with title */
+  margin: 0 14px 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f8fbff;
+  color: #334155;
+  line-height: 1.5;
+  font-size: 0.8rem;
+}
+
+.expanded .cardButton {
+  padding-bottom: 8px;
+}
+
+.emptyState {
+  padding: 20px;
+  color: #64748b;
+  text-align: center;
+}
+
+
+@media (max-width: 780px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filterGroup {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filterBtn,
+  .cardButton {
+    transition: none;
+  }
 }

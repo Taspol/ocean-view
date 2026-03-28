@@ -1,31 +1,93 @@
+.dashboardPage {
+  display: grid;
+  gap: 24px;
+}
+
 .envHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 20px;
+}
+
+.zoneControl {
+  min-width: 250px;
+  display: grid;
+  gap: 8px;
+}
+
+.zoneLabel {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: #0f172a;
 }
 
 .zoneSelect {
-  padding: 8px 14px;
-  background-color: #fff;
-  color: #1e293b;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  appearance: none;
+  padding: 11px 14px;
+  background-color: #ffffff;
+  color: #0f172a;
+  border: 1px solid #c9d4e3;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
   outline: none;
   font-family: inherit;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-  transition: border-color 0.2s;
-  white-space: nowrap;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 44px;
 }
 
 .zoneSelect:hover {
-  border-color: #94a3b8;
+  border-color: #8da3bf;
 }
 
-.zoneSelect:focus {
-  border-color: #0ea5e9;
-  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.15);
+.zoneSelect:focus-visible {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.16);
+}
+
+.zoneHint {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.sectionBlock {
+  display: grid;
+  gap: 14px;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+@media (max-width: 1120px) {
+  .metricsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .envHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .zoneControl {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboardPage {
+    gap: 18px;
+  }
+
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
 }
