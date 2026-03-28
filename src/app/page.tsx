@@ -1,9 +1,13 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/authContext';
-import ScrollPhoneLanding from '@/components/ui/scroll-phone-landing';
+
+const ScrollPhoneLanding = dynamic(() => import('@/components/ui/scroll-phone-landing'), {
+    ssr: false,
+});
 
 export default function HomePage() {
     const router = useRouter();

@@ -76,7 +76,7 @@ const STORY_STEPS: StoryStep[] = [
 function PhoneFrame({ activeIndex }: { activeIndex: number }) {
 
   return (
-    <div className="relative mx-auto w-[min(68vw,245px)] sm:w-[min(74vw,278px)] lg:w-[min(84vw,320px)]">
+    <div className="relative mx-auto w-[min(58vw,205px)] min-[376px]:w-[min(62vw,225px)] sm:w-[min(74vw,278px)] lg:w-[min(84vw,320px)]">
       <div className="absolute inset-0 -z-10 scale-110 rounded-[3.2rem] bg-gradient-to-b from-cyan-200/40 via-blue-200/20 to-transparent blur-2xl" />
 
       <motion.div
@@ -150,7 +150,6 @@ export default function ScrollPhoneLanding() {
   const [phonePinMode, setPhonePinMode] = useState<'start' | 'fixed' | 'end'>('start');
   const [hideNavbar, setHideNavbar] = useState(false);
   const gridContainerRef = useRef<HTMLDivElement | null>(null);
-  const [gridOffsetTop, setGridOffsetTop] = useState(0);
   const backgroundY = useTransform(scrollYProgress, [0, 1], [0, -140]);
 
   useEffect(() => {
@@ -201,6 +200,7 @@ export default function ScrollPhoneLanding() {
 
       const isDesktop = window.matchMedia('(min-width: 768px)').matches;
       const topOffset = isDesktop ? 64 : 84;
+      const mobileEndBuffer = isDesktop ? 0 : 140;
       const sectionRect = storyRef.current.getBoundingClientRect();
       const frameHeight = phoneFrameRef.current.offsetHeight;
       const viewportHeight = window.innerHeight;
@@ -208,13 +208,12 @@ export default function ScrollPhoneLanding() {
 
       if (sectionRect.top > topOffset) {
         setPhonePinMode('start');
-      } else if (sectionRect.bottom <= pinTop + frameHeight) {
+      } else if (sectionRect.bottom <= pinTop + frameHeight + mobileEndBuffer) {
         setPhonePinMode('end');
       } else {
         setPhonePinMode('fixed');
       }
 
-      setGridOffsetTop(gridContainerRef.current.getBoundingClientRect().top + window.scrollY);
     };
 
     updatePhonePin();
@@ -258,7 +257,7 @@ export default function ScrollPhoneLanding() {
         </div>
       </header>
 
-      <section id="hero" className="flex min-h-[100svh] w-full flex-col justify-center px-8 pb-12 pt-28 sm:px-12 sm:pb-30 lg:px-20 lg:pt-32 xl:px-24">
+      <section id="hero" className="flex min-h-[100svh] w-full flex-col justify-center px-8 pb-32 pt-28 sm:px-12 sm:pb-30 lg:px-20 lg:pt-32 xl:px-24">
         <p className="mb-5 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-700">Ocean Monitoring Platform</p>
         <h1 className="max-w-4xl text-3xl font-semibold leading-tight text-slate-900 sm:text-6xl md:text-7xl">
           Master every fishing decision
@@ -278,7 +277,7 @@ export default function ScrollPhoneLanding() {
         </div>
       </section>
 
-      <section id="story" ref={storyRef} className="relative -mt-20 min-h-[360svh] md:mt-0 md:min-h-[460svh]">
+      <section id="story" ref={storyRef} className="relative mt-8 min-h-[520svh] pb-24 md:mt-0 md:min-h-[460svh] md:pb-0">
         <div
           ref={gridContainerRef}
           className={
@@ -288,13 +287,7 @@ export default function ScrollPhoneLanding() {
                 ? 'absolute bottom-0 left-0 right-0'
                 : 'relative'
           }
-          style={
-            phonePinMode === 'fixed'
-              ? {
-                  width: '100%',
-                }
-              : undefined
-          }
+          style={phonePinMode === 'fixed' ? { width: '100%' } : undefined}
         >
           <div className="grid h-full w-full grid-cols-1 gap-3 px-4 sm:px-6 md:grid-cols-[1.1fr_1fr] md:gap-10 lg:px-10">
             <div ref={textColumnRef} className="flex min-h-[36svh] items-start px-4 pt-2 sm:min-h-[44svh] sm:px-8 sm:pt-4 md:h-[100svh] md:items-center md:px-20 md:pt-0">
@@ -348,11 +341,11 @@ export default function ScrollPhoneLanding() {
             </div>
           </div>
 
-          <div ref={phoneColumnRef} className="relative -mt-12 h-[70svh] md:mt-0 md:h-full">
+          <div ref={phoneColumnRef} className="relative mt-3 h-[70svh] md:mt-0 md:h-full">
             <div className="hidden h-[100svh] md:block" />
             <div className="md:absolute md:left-0 md:right-0 md:top-16">
-              <div ref={phoneFrameRef} className="flex h-[min(50svh,420px)] items-start justify-center pt-0 sm:h-[min(60svh,520px)] md:h-[calc(100svh-4rem)] md:items-center md:pt-0">
-                <div className="-translate-y-2 origin-top scale-[0.92] sm:scale-95 md:scale-100 md:-translate-y-1">
+              <div ref={phoneFrameRef} className="flex h-[min(44svh,340px)] min-[376px]:h-[min(48svh,390px)] items-start justify-center pt-0 sm:h-[min(60svh,520px)] md:h-[calc(100svh-4rem)] md:items-center md:pt-0">
+                <div className="translate-y-0 origin-top scale-[0.82] min-[376px]:scale-[0.9] sm:scale-95 md:scale-100 md:-translate-y-1">
                   <PhoneFrame activeIndex={activeIndex} />
                 </div>
               </div>
