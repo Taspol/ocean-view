@@ -271,6 +271,14 @@ export default function ScrollPhoneLanding() {
           <a href="#story" className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-700 sm:px-6 sm:py-3 sm:text-base">
             Explore Story
           </a>
+          <a
+            href="https://lin.ee/TxoCyEd"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full bg-[#06C755] px-5 py-2.5 text-sm font-medium text-white hover:bg-[#05b64d] sm:px-6 sm:py-3 sm:text-base"
+          >
+            Add LINE OA
+          </a>
           <Link href="/login" className="rounded-full border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-800 hover:bg-white sm:px-6 sm:py-3 sm:text-base">
             Open Dashboard
           </Link>
