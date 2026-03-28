@@ -12,7 +12,7 @@ interface SidebarProps {
     onClose?: () => void;
 }
 
-function NavIcon({ type }: { type: 'dashboard' | 'maps' | 'weather' | 'settings' | 'logout' }) {
+function NavIcon({ type }: { type: 'dashboard' | 'maps' | 'prediction' | 'weather' | 'settings' | 'logout' }) {
     const commonProps = {
         className: styles.iconSvg,
         viewBox: '0 0 24 24',
@@ -42,6 +42,17 @@ function NavIcon({ type }: { type: 'dashboard' | 'maps' | 'weather' | 'settings'
         return (
             <svg {...commonProps}>
                 <path d="M7 16C4.79 16 3 14.21 3 12C3 9.79 4.79 8 7 8C7.49 8 7.96 8.09 8.4 8.24C9.07 6.32 10.9 5 13 5C15.76 5 18 7.24 18 10C19.66 10 21 11.34 21 13C21 14.66 19.66 16 18 16H7Z" stroke="currentColor" strokeWidth="1.7" />
+            </svg>
+        );
+    }
+
+    if (type === 'prediction') {
+        return (
+            <svg {...commonProps}>
+                <path d="M4 6H20" stroke="currentColor" strokeWidth="1.7" />
+                <path d="M4 12H14" stroke="currentColor" strokeWidth="1.7" />
+                <path d="M4 18H10" stroke="currentColor" strokeWidth="1.7" />
+                <path d="M17 15L20 18L17 21" stroke="currentColor" strokeWidth="1.7" />
             </svg>
         );
     }
@@ -109,6 +120,15 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                 >
                     <span className={styles.iconWrap}><NavIcon type="weather" /></span>
                     <span>Weather Forecast</span>
+                </Link>
+
+                <Link
+                    href="/prediction"
+                    className={`${styles.navItem} ${pathname === '/prediction' ? styles.navItemActiveParent : ''}`}
+                    onClick={handleNavClick}
+                >
+                    <span className={styles.iconWrap}><NavIcon type="prediction" /></span>
+                    <span>Prediction</span>
                 </Link>
             </nav>
 

@@ -7,7 +7,7 @@ import View from 'ol/View';
 import styles from './MapVisualization.module.css';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
-import { fromLonLat } from 'ol/proj';
+import { fromLonLat, toLonLat } from 'ol/proj';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
 import Feature from 'ol/Feature';
@@ -16,15 +16,46 @@ import Polygon from 'ol/geom/Polygon';
 import { Style, Circle as CircleStyle, Fill, Stroke, Text } from 'ol/style';
 import { FeatureLike } from 'ol/Feature';
 import Cluster from 'ol/source/Cluster';
+import { formatProbability, getLocationPredictions, MOCK_PREDICTIONS } from '@/lib/mockPredictions';
+import { downloadMapTiles, getStorageUsage } from '@/lib/offlineMapManager';
 
-const SEARCH_AREAS = [
-    { name: 'Gulf of Thailand (Center)', lon: 101.5, lat: 9.5, zoom: 7 },
-    { name: 'Andaman Sea Coast', lon: 98.5, lat: 8.5, zoom: 7 },
-    { name: 'Phuket, Thailand', lon: 98.39, lat: 7.89, zoom: 10 },
-    { name: 'Hua Hin, Prachuap Khiri Khan', lon: 99.95, lat: 12.57, zoom: 10 },
-    { name: 'Alpha Zone (Hotspot)', lon: 101.2, lat: 9.8, zoom: 9 },
-    { name: 'Beta Zone (Hotspot)', lon: 101.8, lat: 9.2, zoom: 9 },
-];
+const LOCATION_PREDICTIONS = getLocationPredictions(MOCK_PREDICTIONS);
+
+const SEARCH_AREAS = LOCATION_PREDICTIONS.map((row) => ({
+    name: `${row.location_name} | ${formatProbability(row.probability)}`,
+    lon: row.lon,
+    lat: row.lat,
+    zoom: row.advisory === 'NO_GO' ? 8 : 9,
+}));
+
+function createProbabilityPoints(lon: number, lat: number, probability: number, zoneName: string): Feature<Point>[] {
+    const points: Feature<Point>[] = [];
+    const count = Math.max(8, Math.round(probability * 48));
+    const spread = 0.18;
+
+    for (let i = 0; i < count; i++) {
+        const angle = ((i * 137.5) % 360) * (Math.PI / 180);
+        const radius = spread * ((i % 9) + 1) / 9;
+        const lonOffset = Math.cos(angle) * radius;
+        const latOffset = Math.sin(angle) * radius;
+        const feature = new Feature(new Point(fromLonLat([lon + lonOffset, lat + latOffset])));
+        feature.set('zoneName', zoneName);
+        feature.set('probability', probability);
+        points.push(feature);
+    }
+
+    return points;
+}
+
+function createRestrictedRing(lon: number, lat: number, radius = 0.22): number[][] {
+    return [
+        fromLonLat([lon - radius, lat - radius]),
+        fromLonLat([lon + radius, lat - radius]),
+        fromLonLat([lon + radius, lat + radius]),
+        fromLonLat([lon - radius, lat + radius]),
+        fromLonLat([lon - radius, lat - radius]),
+    ];
+}
 
 interface MapVisualizationProps {
     initialLat?: number;
@@ -54,13 +85,17 @@ export default function MapVisualization({ initialLat, initialLon, initialZoom }
     // Visibility toggles
     const [showAlpha, setShowAlpha] = useState(true);
     const [showClusters, setShowClusters] = useState(true);
-    const [showVessels, setShowVessels] = useState(true);
     const [showRestricted, setShowRestricted] = useState(true);
+
+    // Offline map caching state
+    const [isCaching, setIsCaching] = useState(false);
+    const [cacheProgress, setCacheProgress] = useState(0);
+    const [totalTiles, setTotalTiles] = useState(0);
+    const [storageUsage, setStorageUsage] = useState<{ tileCount: number; approximateSize: number }>({ tileCount: 0, approximateSize: 0 });
 
     // Layer Refs for programmatic control
     const alphaLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
     const clusterLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
-    const vesselLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
     const restrictedLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
 
     useEffect(() => {
@@ -75,50 +110,43 @@ export default function MapVisualization({ initialLat, initialLon, initialZoom }
     useEffect(() => {
         if (!mapElement.current) return;
 
-        // Center on generic ocean coordinates (e.g. Gulf of Thailand roughly)
         const initialCenter = fromLonLat([101.5, 9.5]);
-
-        // Create a vector layer for Fishing Hotspots (Predictions)
         const hotspotSource = new VectorSource();
 
-        // Alpha Zone
-        // const alphaZone = new Feature({
-        //     geometry: new Point(fromLonLat([101.2, 9.8])),
-        //     name: 'Alpha Zone (85%)',
-        // });
+        hotspotSource.addFeatures(
+            LOCATION_PREDICTIONS.map((row) => new Feature({
+                geometry: new Point(fromLonLat([row.lon, row.lat])),
+                advisory: row.advisory,
+            }))
+        );
 
-        // // Beta Zone
-        // const betaZone = new Feature({
-        //     geometry: new Point(fromLonLat([101.8, 9.2])),
-        //     name: 'Beta Zone (72%)',
-        // });
-
-        // hotspotSource.addFeatures([alphaZone, betaZone]);
-
-        // Style the hotspots to look like radar pings / predicted zones
-        const hotspotStyle = new Style({
-            image: new CircleStyle({
-                radius: 12,
-                fill: new Fill({ color: 'rgba(245, 158, 11, 0.5)' }),
-                stroke: new Stroke({
-                    color: 'rgba(245, 158, 11, 1)',
-                    width: 2,
+        const hotspotStyleMap: Record<string, Style> = {
+            GO: new Style({
+                image: new CircleStyle({
+                    radius: 12,
+                    fill: new Fill({ color: 'rgba(16, 185, 129, 0.45)' }),
+                    stroke: new Stroke({ color: 'rgba(5, 150, 105, 0.95)', width: 2 }),
                 }),
             }),
-            text: new Text({
-                font: '14px "Noto Sans", sans-serif',
-                fill: new Fill({ color: '#fff' }),
-                stroke: new Stroke({ color: '#000', width: 3 }),
-                offsetY: -25,
+            CAUTION: new Style({
+                image: new CircleStyle({
+                    radius: 12,
+                    fill: new Fill({ color: 'rgba(245, 158, 11, 0.5)' }),
+                    stroke: new Stroke({ color: 'rgba(217, 119, 6, 1)', width: 2 }),
+                }),
             }),
-        });
+            NO_GO: new Style({
+                image: new CircleStyle({
+                    radius: 12,
+                    fill: new Fill({ color: 'rgba(239, 68, 68, 0.45)' }),
+                    stroke: new Stroke({ color: 'rgba(220, 38, 38, 1)', width: 2 }),
+                }),
+            }),
+        };
 
         const styleFunction = (feature: FeatureLike) => {
-            const text = hotspotStyle.getText();
-            if (text) {
-                text.setText(feature.get('name') as string);
-            }
-            return hotspotStyle;
+            const advisory = (feature.get('advisory') as string) || 'CAUTION';
+            return hotspotStyleMap[advisory] ?? hotspotStyleMap.CAUTION;
         };
 
         const vectorLayer = new VectorLayer({
@@ -128,22 +156,14 @@ export default function MapVisualization({ initialLat, initialLon, initialZoom }
         });
         alphaLayerRef.current = vectorLayer;
 
-        // Darker / customized tile layer if possible, using standard OSM for now
-        // but tuning opacity so our background color blends through slightly
         const baseLayer = new TileLayer({
             source: new OSM(),
             opacity: 0.8,
         });
 
-        // Fish Clusters (Predictions/Aggregations)
-        const fishPoints = [];
-        // Spawn a large number of points explicitly avoiding the main Thai peninsula
-        for (let i = 0; i < 500; i++) {
-            // tightly constrained to open water in Gulf of Thailand
-            const lon = 100.5 + Math.random() * 2.5;
-            const lat = 8.0 + Math.random() * 3.5;
-            fishPoints.push(new Feature(new Point(fromLonLat([lon, lat]))));
-        }
+        const fishPoints = LOCATION_PREDICTIONS.flatMap((row) =>
+            createProbabilityPoints(row.lon, row.lat, row.probability, row.location_name)
+        );
 
         const fishSource = new VectorSource({
             features: fishPoints,
@@ -154,16 +174,40 @@ export default function MapVisualization({ initialLat, initialLon, initialZoom }
             source: fishSource,
         });
 
-        const clusterStyleCache: { [key: number]: Style } = {};
+        const clusterStyleCache: { [key: string]: Style } = {};
         const clusterLayer = new VectorLayer({
             source: clusterSource,
             style: (feature) => {
-                const size = feature.get('features').length;
+                const members = feature.get('features') as Feature<Point>[];
+                const size = members.length;
 
-                // Only render clusters with at least 10 items
                 if (size < 10) return;
 
-                let style = clusterStyleCache[size];
+                const zoneCounts: Record<string, { count: number; probability: number }> = {};
+                members.forEach((member) => {
+                    const zoneName = (member.get('zoneName') as string) || 'Unknown Zone';
+                    const probability = (member.get('probability') as number) || 0;
+                    if (zoneCounts[zoneName]) {
+                        zoneCounts[zoneName].count += 1;
+                    } else {
+                        zoneCounts[zoneName] = { count: 1, probability };
+                    }
+                });
+
+                let labelZone = 'Unknown Zone';
+                let labelPercent = '0%';
+                let maxCount = 0;
+                for (const zoneName in zoneCounts) {
+                    if (zoneCounts[zoneName].count > maxCount) {
+                        maxCount = zoneCounts[zoneName].count;
+                        labelZone = zoneName;
+                        labelPercent = `${Math.round(zoneCounts[zoneName].probability * 100)}%`;
+                    }
+                }
+                const textLabel = `${labelZone}\n${labelPercent}`;
+
+                const styleKey = `${size}-${labelZone}-${labelPercent}`;
+                let style = clusterStyleCache[styleKey];
                 if (!style) {
                     style = new Style({
                         image: new CircleStyle({
@@ -176,15 +220,17 @@ export default function MapVisualization({ initialLat, initialLon, initialZoom }
                             }),
                         }),
                         text: new Text({
-                            text: size.toString(),
+                            text: textLabel,
                             fill: new Fill({
                                 color: '#fff',
                             }),
-                            font: '12px "Noto Sans", sans-serif',
+                            font: '11px "Noto Sans", sans-serif',
+                            textAlign: 'center',
+                            offsetY: -24,
                             stroke: new Stroke({ color: 'rgba(0, 0, 0, 0.6)', width: 2 })
                         }),
                     });
-                    clusterStyleCache[size] = style;
+                    clusterStyleCache[styleKey] = style;
                 }
                 return style;
             },
@@ -192,66 +238,29 @@ export default function MapVisualization({ initialLat, initialLon, initialZoom }
         });
         clusterLayerRef.current = clusterLayer;
 
-        // Vessel Tracking (Placeholder Data)
-        const vesselPoints = [];
-        for (let i = 0; i < 20; i++) {
-            const lon = 100.5 + Math.random() * 3.0;
-            const lat = 8.5 + Math.random() * 3.0;
-            vesselPoints.push(new Feature(new Point(fromLonLat([lon, lat]))));
-        }
 
-        const vesselStyle = new Style({
-            image: new CircleStyle({
-                radius: 4,
-                fill: new Fill({ color: '#10B981' }), // Emerald Green
-                stroke: new Stroke({ color: '#fff', width: 1 }),
-            })
-        });
 
-        const vesselLayer = new VectorLayer({
-            source: new VectorSource({ features: vesselPoints }),
-            style: vesselStyle,
-            visible: showVessels,
-        });
-        vesselLayerRef.current = vesselLayer;
-
-        // Restricted Zones (Mock Polygons in Ocean Areas)
-        const restrictedZones = [
-            [
-                [99.958486,11.367476],[99.980257,11.852257],[100.133646,12.201833],[100.109182,12.453915],[100.359028,12.335880],[100.292168,11.850442],[100.203743,11.313610]
-            ],
-            // Detailed Area in the Central Gulf of Thailand
-            [
-                [99.446441, 9.445660], [99.279115, 9.826591], [99.345849, 10.118198], [99.512665, 10.525407], [99.977694, 10.781088], [100.314514,10.366466],[100.236197,10.058698] ,[100.458260,9.622593], [100.217062,9.222093]
-            ],
-            // Area near the deeper trench east of Phuket
-            [
-                [97.8, 7.5], [98.2, 7.7], [98.4, 7.3], [98.0, 7.1], [97.8, 7.5]
-            ],
-        ];
-
-        const restrictedFeatures = restrictedZones.map(coords => {
-            return new Feature({
-                geometry: new Polygon([coords.map(c => fromLonLat(c))])
-            });
-        });
+        const restrictedFeatures = LOCATION_PREDICTIONS
+            .filter((row) => row.mpa_flag || row.closure_flag || row.spawning_flag)
+            .map((row) => new Feature({
+                geometry: new Polygon([createRestrictedRing(row.lon, row.lat)]),
+            }));
 
         const restrictedStyle = new Style({
-            fill: new Fill({ color: 'rgba(239, 68, 68, 0.3)' }), // red-500
-            stroke: new Stroke({ color: '#ef4444', width: 2 })
+            fill: new Fill({ color: 'rgba(239, 68, 68, 0.3)' }),
+            stroke: new Stroke({ color: '#ef4444', width: 2 }),
         });
 
         const restrictedLayer = new VectorLayer({
             source: new VectorSource({ features: restrictedFeatures }),
             style: restrictedStyle,
-            visible: showRestricted
+            visible: showRestricted,
         });
         restrictedLayerRef.current = restrictedLayer;
 
-        // Initialize the OpenLayers Map
         const initialMap = new Map({
             target: mapElement.current,
-            layers: [baseLayer, restrictedLayer, clusterLayer, vectorLayer, vesselLayer],
+            layers: [baseLayer, restrictedLayer, clusterLayer, vectorLayer],
             view: new View({
                 center: initialCenter,
                 zoom: 7,
@@ -275,12 +284,13 @@ export default function MapVisualization({ initialLat, initialLon, initialZoom }
     }, [showClusters]);
 
     useEffect(() => {
-        if (vesselLayerRef.current) vesselLayerRef.current.setVisible(showVessels);
-    }, [showVessels]);
-
-    useEffect(() => {
         if (restrictedLayerRef.current) restrictedLayerRef.current.setVisible(showRestricted);
     }, [showRestricted]);
+
+    // Load storage usage on mount
+    useEffect(() => {
+        getStorageUsage().then(setStorageUsage).catch(console.error);
+    }, []);
 
     // Map Controls
     const handleZoomIn = () => {
@@ -311,6 +321,82 @@ export default function MapVisualization({ initialLat, initialLon, initialZoom }
         setIsSearching(false);
     };
 
+    const handleDownloadMap = () => {
+        if (!map) return;
+        
+        map.once('rendercomplete', () => {
+            const canvas = document.querySelector('canvas') as HTMLCanvasElement;
+            if (canvas) {
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `ocean-fishing-map-${new Date().toISOString().slice(0, 10)}.png`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                    }
+                });
+            }
+        });
+        map.renderSync();
+    };
+
+    const handleCacheMapForOffline = async () => {
+        if (!map || isCaching) return;
+
+        setIsCaching(true);
+        setCacheProgress(0);
+
+        try {
+            const view = map.getView();
+            const center = view.getCenter();
+            const zoom = view.getZoom();
+
+            if (!center || zoom === undefined) return;
+
+            // Convert from Web Mercator to lat/lon
+            const [centerLon, centerLat] = toLonLat(center);
+
+            // Calculate bounding box based on current view (roughly 2 degrees in each direction)
+            const delta = 2;
+            const minLat = centerLat - delta;
+            const maxLat = centerLat + delta;
+            const minLon = centerLon - delta;
+            const maxLon = centerLon + delta;
+
+            // Limit zoom level for offline caching (max 15 to keep file size reasonable)
+            const cacheZoom = Math.min(Math.floor(zoom), 15);
+
+            await downloadMapTiles(
+                minLat,
+                minLon,
+                maxLat,
+                maxLon,
+                cacheZoom,
+                `Map at ${centerLat.toFixed(2)}, ${centerLon.toFixed(2)}`,
+                (current, total) => {
+                    setTotalTiles(total);
+                    setCacheProgress(Math.round((current / total) * 100));
+                }
+            );
+
+            // Refresh storage usage
+            const usage = await getStorageUsage();
+            setStorageUsage(usage);
+
+            alert(`Successfully cached ${Math.round(totalTiles)} map tiles for offline use!`);
+        } catch (error) {
+            console.error('Failed to cache map:', error);
+            alert('Failed to cache map for offline use. Please try again.');
+        } finally {
+            setIsCaching(false);
+            setCacheProgress(0);
+        }
+    };
+
     const searchResults = SEARCH_AREAS.filter(area =>
         area.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -318,17 +404,6 @@ export default function MapVisualization({ initialLat, initialLon, initialZoom }
     return (
         <div className={`glass-panel ${styles.container}`}>
             <div className={styles.searchOverlay} ref={searchRef}>
-                <input
-                    type="text"
-                    className={styles.searchInput}
-                    placeholder="Search for an area..."
-                    value={searchQuery}
-                    onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        setIsSearching(true);
-                    }}
-                    onFocus={() => setIsSearching(true)}
-                />
                 {isSearching && searchQuery.length > 0 && (
                     <div className={styles.searchDropdown}>
                         {searchResults.length > 0 ? (
@@ -344,30 +419,81 @@ export default function MapVisualization({ initialLat, initialLon, initialZoom }
                 )}
             </div>
 
-            <div ref={mapElement} className={styles.mapElement} />
+            <div ref={mapElement} className={styles.mapElement} style={{ position: 'relative' }}>
+                <div className={styles.controls}>
+                    <button className={`glass-button ${styles.zoomBtn}`} title="Zoom In" onClick={handleZoomIn}>+</button>
+                    <button className={`glass-button ${styles.zoomBtn}`} title="Zoom Out" onClick={handleZoomOut}>−</button>
+                </div>
 
-            <div className={styles.controls}>
-                <button className={`glass-button ${styles.zoomBtn}`} title="Zoom In" onClick={handleZoomIn}>+</button>
-                <button className={`glass-button ${styles.zoomBtn}`} title="Zoom Out" onClick={handleZoomOut}>-</button>
+                {storageUsage.tileCount > 0 && (
+                    <div className={styles.storageInfo} style={{
+                        position: 'absolute',
+                        top: 10,
+                        right: 10,
+                        background: 'rgba(255, 255, 255, 0.9)',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        fontSize: 'clamp(0.65rem, 1.5vw, 0.75rem)',
+                        color: '#475569',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(217, 225, 236, 0.5)'
+                    }}>
+                        <div>Cached: {storageUsage.tileCount} tiles</div>
+                        <div>~{(storageUsage.approximateSize / 1024 / 1024).toFixed(1)} MB</div>
+                    </div>
+                )}
+            </div>
+
+            <div style={{
+                display: 'flex',
+                gap: '8px',
+                width: '100%',
+                padding: '12px',
+                flexDirection: 'column'
+            }}>
+                <button 
+                    className="glass-button"
+                    onClick={handleDownloadMap}
+                    style={{
+                        padding: 'clamp(10px, 3vw, 14px) clamp(12px, 4vw, 16px)',
+                        fontSize: 'clamp(0.8rem, 2vw, 0.9rem)',
+                        fontWeight: '600',
+                        minHeight: '44px',
+                        touchAction: 'manipulation'
+                    }}
+                >
+                    Download Map Image
+                </button>
+                <button 
+                    className="glass-button"
+                    onClick={handleCacheMapForOffline}
+                    disabled={isCaching}
+                    style={{
+                        padding: 'clamp(10px, 3vw, 14px) clamp(12px, 4vw, 16px)',
+                        fontSize: 'clamp(0.8rem, 2vw, 0.9rem)',
+                        fontWeight: '600',
+                        minHeight: '44px',
+                        opacity: isCaching ? 0.6 : 1,
+                        touchAction: 'manipulation'
+                    }}
+                >
+                    {isCaching ? `Caching ${cacheProgress}%` : 'Store Offline Map'}
+                </button>
             </div>
 
             <div className={styles.legend}>
                 <h4 className={styles.legendTitle}>Oceanic Data Layers</h4>
                 <label className={`${styles.legendItem} ${styles.mb}`}>
                     <input type="checkbox" checked={showAlpha} onChange={(e) => setShowAlpha(e.target.checked)} className={styles.checkbox} />
-                    <span className={`${styles.legendColor} ${styles.colorAlpha}`}></span> Alpha Predictions
+                    <span className={`${styles.legendColor} ${styles.colorAlpha}`}></span> <span style={{ fontSize: 'clamp(0.75rem, 2vw, 0.85rem)' }}>Species Predictions</span>
                 </label>
                 <label className={`${styles.legendItem} ${styles.mb}`}>
                     <input type="checkbox" checked={showClusters} onChange={(e) => setShowClusters(e.target.checked)} className={styles.checkbox} />
-                    <span className={`${styles.legendColor} ${styles.colorCluster}`}></span> Fish Clusters
-                </label>
-                <label className={`${styles.legendItem} ${styles.mb}`}>
-                    <input type="checkbox" checked={showVessels} onChange={(e) => setShowVessels(e.target.checked)} className={styles.checkbox} />
-                    <span className={`${styles.legendColor} ${styles.colorVessel}`}></span> Vessel Tracking
+                    <span className={`${styles.legendColor} ${styles.colorCluster}`}></span> <span style={{ fontSize: 'clamp(0.75rem, 2vw, 0.85rem)' }}>Fish Clusters</span>
                 </label>
                 <label className={styles.legendItem}>
                     <input type="checkbox" checked={showRestricted} onChange={(e) => setShowRestricted(e.target.checked)} className={styles.checkbox} />
-                    <span className={`${styles.legendColor} ${styles.colorRestricted}`}></span> Restricted Zones
+                    <span className={`${styles.legendColor} ${styles.colorRestricted}`}></span> <span style={{ fontSize: 'clamp(0.75rem, 2vw, 0.85rem)' }}>Restricted Zones</span>
                 </label>
             </div>
         </div>

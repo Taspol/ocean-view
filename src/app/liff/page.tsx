@@ -96,38 +96,40 @@ export default function LIFFDashboard() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '24px 16px',
+                padding: 'clamp(12px, 3vw, 24px)',
                 background: 'var(--background)',
                 color: 'var(--foreground)',
+                minHeight: '100vh',
             }}
         >
             <section
                 style={{
                     width: '100%',
-                    maxWidth: '420px',
+                    maxWidth: 'clamp(280px, 90vw, 420px)',
                     background: 'var(--surface)',
                     border: '1px solid var(--border)',
                     borderRadius: '12px',
-                    padding: '20px',
+                    padding: 'clamp(16px, 4vw, 24px)',
                     textAlign: 'center',
                 }}
             >
-                <h1 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>LINE Login</h1>
+                <h1 style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.4rem)', marginBottom: 'clamp(8px, 2vw, 12px)' }}>LINE Login</h1>
                 <div
                     style={{
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '10px',
-                        marginTop: '8px',
+                        gap: 'clamp(8px, 2vw, 12px)',
+                        marginTop: 'clamp(12px, 2vw, 16px)',
                     }}
                 >
                     {!error && (
                         <span
                             aria-hidden="true"
                             style={{
-                                width: '16px',
-                                height: '16px',
+                                width: 'clamp(20px, 5vw, 24px)',
+                                height: 'clamp(20px, 5vw, 24px)',
                                 borderRadius: '50%',
                                 border: '2px solid rgba(148, 163, 184, 0.4)',
                                 borderTopColor: '#0ea5e9',
@@ -135,7 +137,7 @@ export default function LIFFDashboard() {
                             }}
                         />
                     )}
-                    <p style={{ margin: 0, opacity: 0.8 }}>{error || status}</p>
+                    <p style={{ margin: 0, opacity: 0.8, fontSize: 'clamp(0.9rem, 1.8vw, 1rem)' }}>{error || status}</p>
                 </div>
 
                 <style jsx>{`

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Neuton } from "next/font/google";
 import AppShell from "@/components/AppShell";
+import OfflineProvider from "@/components/OfflineProvider";
 import { AuthProvider } from "@/lib/authContext";
 import "./globals.css";
 
@@ -18,6 +19,15 @@ export const metadata: Metadata = {
     shortcut: "/logo.png",
     apple: "/logo.png",
   },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Ocean Fishing",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({
@@ -27,7 +37,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="theme-color" content="#0f172a" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body className={neuton.variable}>
+        <OfflineProvider />
         <AuthProvider>
           <AppShell>{children}</AppShell>
         </AuthProvider>

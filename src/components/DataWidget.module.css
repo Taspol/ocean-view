@@ -10,18 +10,9 @@
   border: 1px solid #d9e1ec;
   border-radius: 16px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-  position: relative;
-  overflow: hidden;
 }
 
-.widget::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-}
+
 
 .widget:hover {
   transform: translateY(-2px);
@@ -72,21 +63,7 @@
   color: #64748b;
 }
 
-.toneInfo::before {
-  background: linear-gradient(90deg, #0284c7, #38bdf8);
-}
 
-.toneWarning::before {
-  background: linear-gradient(90deg, #b45309, #f59e0b);
-}
-
-.toneSuccess::before {
-  background: linear-gradient(90deg, #15803d, #22c55e);
-}
-
-.toneNeutral::before {
-  background: linear-gradient(90deg, #334155, #64748b);
-}
 
 /* Tablet and up */
 @media (min-width: 768px) {

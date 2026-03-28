@@ -3,12 +3,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './MonitoredZones.module.css';
-import { ALL_ZONES } from '@/lib/zones';
+import { formatProbability, getLocationPredictions, MOCK_PREDICTIONS } from '@/lib/mockPredictions';
+
+const LOCATION_PREDICTIONS = getLocationPredictions(MOCK_PREDICTIONS);
+const DEFAULT_MONITORED_IDS = LOCATION_PREDICTIONS.slice(0, 3).map((zone) => zone.id);
+
+// Type guard to filter out undefined values
+const isDefined = <T,>(value: T | undefined): value is T => value !== undefined;
 
 export default function MonitoredZones() {
     const router = useRouter();
-    // Initialize with the original 3 defaults
-    const [monitoredIds, setMonitoredIds] = useState<string[]>(['z1', 'z2', 'z3']);
+    const [monitoredIds, setMonitoredIds] = useState<string[]>(DEFAULT_MONITORED_IDS);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, setIsSearching] = useState(false);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -41,17 +46,17 @@ export default function MonitoredZones() {
         setMonitoredIds(prev => prev.filter(z => z !== id));
     };
 
-    const searchResults = ALL_ZONES.filter(z =>
-        !monitoredIds.includes(z.id) &&
-        z.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const searchResults = LOCATION_PREDICTIONS.filter((zone) =>
+        !monitoredIds.includes(zone.id) &&
+        `${zone.location_name} ${zone.common_name} ${zone.species_thai}`.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const displayedZones = monitoredIds
-        .map(id => ALL_ZONES.find(z => z.id === id))
-        .filter(Boolean) as typeof ALL_ZONES;
+        .map((id) => LOCATION_PREDICTIONS.find((zone) => zone.id === id))
+        .filter(isDefined);
 
-    const top5Zones = [...ALL_ZONES]
-        .sort((a, b) => parseInt(b.chance) - parseInt(a.chance))
+    const top5Zones = [...LOCATION_PREDICTIONS]
+        .sort((a, b) => b.probability - a.probability)
         .slice(0, 5);
 
     return (
@@ -59,18 +64,6 @@ export default function MonitoredZones() {
             <div className={styles.mainColumn}>
                 {/* Search Add Feature */}
                 <div className={styles.searchHeader} ref={searchContainerRef}>
-                    <input
-                        type="text"
-                        className={styles.searchInput}
-                        placeholder="Search for a new zone to monitor... (e.g. 'Delta')"
-                        aria-label="Search for zone to monitor"
-                        value={searchQuery}
-                        onChange={(e) => {
-                            setSearchQuery(e.target.value);
-                            setIsSearching(true);
-                        }}
-                        onFocus={() => setIsSearching(true)}
-                    />
 
                     {isSearching && searchQuery.length > 0 && (
                         <div className={styles.searchDropdown}>
@@ -82,8 +75,8 @@ export default function MonitoredZones() {
                                         className={styles.dropdownItem}
                                         onClick={() => handleAddZone(zone.id)}
                                     >
-                                        <span className={styles.dropdownName}>{zone.name}</span>
-                                        <span className={styles.dropdownChance}>{zone.chance}</span>
+                                        <span className={styles.dropdownName}>{zone.location_name}</span>
+                                        <span className={styles.dropdownChance}>{formatProbability(zone.probability)}</span>
                                     </button>
                                 ))
                             ) : (
@@ -100,12 +93,14 @@ export default function MonitoredZones() {
                     displayedZones.map((spot) => (
                         <div key={spot.id} className={styles.configItemRow}>
                             <div className={styles.zoneInfo}>
-                                <div className={styles.zoneName}>{spot.name}</div>
-                                <div className={styles.zoneCoords}>Coordinates: {spot.coords}</div>
+                                <div className={styles.zoneName}>{spot.location_name}</div>
+                                <div className={styles.zoneCoords}>
+                                    Coordinates: {spot.coords} | {spot.common_name} ({spot.species_thai})
+                                </div>
                             </div>
                             <div className={styles.zoneRate}>
-                                <div className={styles.rateLabel}>Predicted Catch Rate</div>
-                                <div className={styles.rateValue}>{spot.chance}</div>
+                                <div className={styles.rateLabel}>{spot.advisory} Advisory</div>
+                                <div className={styles.rateValue}>{formatProbability(spot.probability)}</div>
                             </div>
                             <div className={styles.actions}>
                                 <button
@@ -122,7 +117,7 @@ export default function MonitoredZones() {
                                             setOpenMenuId(openMenuId === spot.id ? null : spot.id);
                                         }}
                                         title="More options"
-                                        aria-label={`More options for ${spot.name}`}
+                                        aria-label={`More options for ${spot.location_name}`}
                                     >
                                         ⋮
                                     </button>
@@ -153,8 +148,8 @@ export default function MonitoredZones() {
                         <li key={z.id} className={styles.topListItem}>
                             <span className={styles.rankNumber}>#{idx + 1}</span>
                             <div className={styles.topInfo}>
-                                <div className={styles.topName}>{z.name}</div>
-                                <div className={styles.topChance}>{z.chance}</div>
+                                <div className={styles.topName}>{z.location_name}</div>
+                                <div className={styles.topChance}>{formatProbability(z.probability)}</div>
                             </div>
                         </li>
                     ))}

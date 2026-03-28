@@ -1,0 +1,169 @@
+.panel {
+  border: 1px solid #d9e1ec;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.title {
+  margin: 0;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #0f172a;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  font-size: 0.86rem;
+  color: #64748b;
+}
+
+.controlsRow {
+  display: grid;
+  gap: 8px;
+}
+
+.label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.inputGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.select {
+  appearance: none;
+  border: 1px solid #c9d4e3;
+  border-radius: 12px;
+  min-height: 44px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0f172a;
+  background: #ffffff;
+  font-family: inherit;
+  outline: none;
+}
+
+.select:focus-visible {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.16);
+}
+
+.predictButton {
+  min-height: 44px;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.92rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter 0.2s ease;
+}
+
+.predictButton:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.predictButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.preview {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #475569;
+}
+
+.status {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.historyBlock {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 10px;
+}
+
+.historyTitle {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #334155;
+}
+
+.emptyText {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+.historyList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.historyItem {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  background: #f8fafc;
+}
+
+.range {
+  display: block;
+  font-size: 0.84rem;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.runAt {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.days {
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+@media (min-width: 768px) {
+  .panel {
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 0.95rem;
+  }
+}
