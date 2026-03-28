@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -18,19 +17,19 @@ type StoryStep = {
   accent: string;
   metricA: string;
   metricB: string;
-  screenshot: string;
+  previewVideo: string;
 };
 
 const STORY_STEPS: StoryStep[] = [
   {
     id: 'line-oa',
     eyebrow: 'Instant Entry',
-    title: 'Can Access through Line OA',
-    body: 'Launch the platform directly from LINE Official Account for a smooth, one-tap start your crew can use anywhere.',
+    title: 'Fast access for every crew member',
+    body: 'Open the platform in seconds with a smooth, one-tap workflow designed for teams operating at sea.',
     accent: 'from-lime-400/60 to-green-500/60',
     metricA: 'One-tap access',
-    metricB: 'LINE-ready workflow',
-    screenshot: '/ui_features/1.PNG',
+    metricB: 'Team-ready workflow',
+    previewVideo: '/ui_features/video/1.mov',
   },
   {
     id: 'dashboard',
@@ -40,7 +39,7 @@ const STORY_STEPS: StoryStep[] = [
     accent: 'from-cyan-400/60 to-blue-500/60',
     metricA: 'Multi-zone visibility',
     metricB: 'Live environment sync',
-    screenshot: '/ui_features/1.PNG',
+    previewVideo: '/ui_features/video/2.mov',
   },
   {
     id: 'alerts',
@@ -50,7 +49,7 @@ const STORY_STEPS: StoryStep[] = [
     accent: 'from-amber-400/60 to-orange-500/60',
     metricA: 'Interactive zone layers',
     metricB: 'Offline map downloads',
-    screenshot: '/ui_features/2.PNG',
+    previewVideo: '/ui_features/video/3.mov',
   },
   {
     id: 'analytics',
@@ -60,7 +59,7 @@ const STORY_STEPS: StoryStep[] = [
     accent: 'from-emerald-400/60 to-teal-500/60',
     metricA: 'Zone probability scoring',
     metricB: 'Prediction history',
-    screenshot: '/ui_features/3.PNG',
+    previewVideo: '/ui_features/video/4.mov',
   },
   {
     id: 'team',
@@ -70,7 +69,7 @@ const STORY_STEPS: StoryStep[] = [
     accent: 'from-violet-400/60 to-indigo-500/60',
     metricA: 'Wave-height outlook',
     metricB: 'Trip safety planning',
-    screenshot: '/ui_features/4.PNG',
+    previewVideo: '/ui_features/video/5.mov',
   },
 ];
 
@@ -106,26 +105,28 @@ function PhoneFrame({ activeIndex }: { activeIndex: number }) {
               <div className="absolute -right-10 top-44 h-40 w-40 rounded-full bg-violet-400/20 blur-3xl" />
             </div>
 
-            {/* Image fills entire screen */}
+            {/* Video fills entire screen */}
             <div className="absolute inset-0">
-              {STORY_STEPS.map((step, index) => (
+              <AnimatePresence mode="wait">
                 <motion.div
-                  key={step.id}
+                  key={STORY_STEPS[activeIndex].id}
                   className="absolute inset-0"
-                  initial={false}
-                  animate={{ opacity: index === activeIndex ? 1 : 0 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   transition={{ duration: 0.35, ease: 'easeOut' }}
                 >
-                  <Image
-                    src={step.screenshot}
-                    alt={`${step.title} preview`}
-                    fill
-                    sizes="(max-width: 1068px) 260px, 300px"
-                    className="object-contain object-top"
-                    priority={step.id === 'dashboard'}
+                  <video
+                    src={STORY_STEPS[activeIndex].previewVideo}
+                    className="h-full w-full object-contain object-top"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="metadata"
                   />
                 </motion.div>
-              ))}
+              </AnimatePresence>
             </div>
           </div>
         </div>
@@ -260,12 +261,12 @@ export default function ScrollPhoneLanding() {
       <section id="hero" className="flex min-h-[100svh] w-full flex-col justify-center px-8 pb-12 pt-28 sm:px-12 sm:pb-30 lg:px-20 lg:pt-32 xl:px-24">
         <p className="mb-5 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-700">Ocean Monitoring Platform</p>
         <h1 className="max-w-4xl text-3xl font-semibold leading-tight text-slate-900 sm:text-6xl md:text-7xl">
-          Navigate faster decisions
+          Master every fishing decision
           <br />
-          with a dashboard built for sea operations.
+          on one unified ocean platform.
         </h1>
         <p className="mt-6 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-xl">
-          Premium analytics for captains and teams. Monitor changing ocean conditions and fishing zone visualization.
+          Get full ocean-zone visibility, explore and download offline fishing maps, run zone predictions, and track weather plus wave forecasts before every trip.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <a href="#story" className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-700 sm:px-6 sm:py-3 sm:text-base">
