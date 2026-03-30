@@ -1,11 +1,7 @@
 import { NextRequest } from 'next/server';
-import { setDefaultResultOrder } from 'node:dns';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-
-// Prefer IPv4 DNS resolution first to reduce timeout issues on some hosts.
-setDefaultResultOrder('ipv4first');
 
 type IncomingMessage = {
   role: 'user' | 'assistant';
@@ -79,6 +75,69 @@ async function fetchWithRetry(url: string, init: RequestInit, retries = 2): Prom
   }
 
   throw lastError instanceof Error ? lastError : new Error('Unknown fetch error');
+}
+
+function getErrorMeta(error: unknown): { message: string; code: string; causeMessage: string } {
+  const message = error instanceof Error ? error.message : String(error);
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code?: string }).code || '')
+      : '';
+  const causeMessage =
+    typeof error === 'object' && error !== null && 'cause' in error
+      ? String((error as { cause?: unknown }).cause || '')
+      : '';
+  return { message, code, causeMessage };
+}
+
+function isTimeoutError(error: unknown): boolean {
+  const { message, code, causeMessage } = getErrorMeta(error);
+  const combined = `${message} ${causeMessage}`.toLowerCase();
+  return combined.includes('timeout') || combined.includes('etimedout') || code === 'ETIMEDOUT';
+}
+
+export async function GET() {
+  const apiKey = process.env.OPENTYPHOON_API_KEY;
+  if (!apiKey) {
+    return Response.json({ ok: false, error: 'Missing OPENTYPHOON_API_KEY' }, { status: 500 });
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort('Connectivity check timeout after 10s'), 10000);
+
+  try {
+    const res = await fetch('https://api.opentyphoon.ai/v1/models', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      },
+      signal: controller.signal,
+      cache: 'no-store',
+    });
+
+    const text = await res.text();
+    return Response.json(
+      {
+        ok: res.ok,
+        status: res.status,
+        statusText: res.statusText,
+        sample: text.slice(0, 300),
+      },
+      { status: res.ok ? 200 : 502 }
+    );
+  } catch (error) {
+    const meta = getErrorMeta(error);
+    return Response.json(
+      {
+        ok: false,
+        error: 'Connectivity check failed',
+        ...meta,
+      },
+      { status: isTimeoutError(error) ? 504 : 500 }
+    );
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function POST(request: NextRequest) {
@@ -167,7 +226,16 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('AI chat route error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return new Response(`AI chat error: ${message}`, { status: 500 });
+    const meta = getErrorMeta(error);
+    if (isTimeoutError(error)) {
+      return new Response(
+        `AI chat timeout: Deployed server cannot reach api.opentyphoon.ai in time. message=${meta.message} code=${meta.code} cause=${meta.causeMessage}`,
+        { status: 504 }
+      );
+    }
+    return new Response(
+      `AI chat error: message=${meta.message} code=${meta.code} cause=${meta.causeMessage}`,
+      { status: 500 }
+    );
   }
 }
