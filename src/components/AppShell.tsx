@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from './Sidebar';
+import AIAssistantWidget from './AIAssistantWidget';
 import styles from '../app/page.module.css';
 
 const STANDALONE_ROUTES = ['/', '/login', '/register', '/liff'];
@@ -35,7 +36,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }, []);
 
     if (isStandalonePage) {
-        return <>{children}</>;
+        return (
+            <>
+                {children}
+                <AIAssistantWidget />
+            </>
+        );
     }
 
     return (
@@ -70,6 +76,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     {children}
                 </main>
             </div>
+            <AIAssistantWidget />
         </div>
     );
 }

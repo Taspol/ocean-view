@@ -12,7 +12,7 @@ interface SidebarProps {
     onClose?: () => void;
 }
 
-function NavIcon({ type }: { type: 'dashboard' | 'maps' | 'prediction' | 'weather' | 'settings' | 'logout' }) {
+function NavIcon({ type }: { type: 'dashboard' | 'maps' | 'prediction' | 'weather' | 'ai' | 'settings' | 'logout' }) {
     const commonProps = {
         className: styles.iconSvg,
         viewBox: '0 0 24 24',
@@ -62,6 +62,15 @@ function NavIcon({ type }: { type: 'dashboard' | 'maps' | 'prediction' | 'weathe
             <svg {...commonProps}>
                 <path d="M12 8.5C10.07 8.5 8.5 10.07 8.5 12C8.5 13.93 10.07 15.5 12 15.5C13.93 15.5 15.5 13.93 15.5 12C15.5 10.07 13.93 8.5 12 8.5Z" stroke="currentColor" strokeWidth="1.7" />
                 <path d="M19.4 15A1.66 1.66 0 0 0 19.73 16.82L19.79 16.88A2 2 0 1 1 16.96 19.71L16.9 19.65A1.66 1.66 0 0 0 15.08 19.32A1.66 1.66 0 0 0 14 20.85V21A2 2 0 1 1 10 21V20.85A1.66 1.66 0 0 0 8.92 19.32A1.66 1.66 0 0 0 7.1 19.65L7.04 19.71A2 2 0 1 1 4.21 16.88L4.27 16.82A1.66 1.66 0 0 0 4.6 15A1.66 1.66 0 0 0 3.07 13.92H3A2 2 0 1 1 3 9.92H3.15A1.66 1.66 0 0 0 4.6 8.92A1.66 1.66 0 0 0 4.27 7.1L4.21 7.04A2 2 0 1 1 7.04 4.21L7.1 4.27A1.66 1.66 0 0 0 8.92 4.6H9A1.66 1.66 0 0 0 10 3.15V3A2 2 0 1 1 14 3V3.15A1.66 1.66 0 0 0 15.08 4.6A1.66 1.66 0 0 0 16.9 4.27L16.96 4.21A2 2 0 1 1 19.79 7.04L19.73 7.1A1.66 1.66 0 0 0 19.4 8.92V9A1.66 1.66 0 0 0 20.93 10.08H21A2 2 0 1 1 21 14.08H20.85A1.66 1.66 0 0 0 19.4 15Z" stroke="currentColor" strokeWidth="1.4" />
+            </svg>
+        );
+    }
+
+    if (type === 'ai') {
+        return (
+            <svg {...commonProps}>
+                <path d="M12 3L13.7 7.3L18 9L13.7 10.7L12 15L10.3 10.7L6 9L10.3 7.3L12 3Z" stroke="currentColor" strokeWidth="1.7" />
+                <path d="M18 14L18.8 16.2L21 17L18.8 17.8L18 20L17.2 17.8L15 17L17.2 16.2L18 14Z" stroke="currentColor" strokeWidth="1.7" />
             </svg>
         );
     }
@@ -130,6 +139,17 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                     <span className={styles.iconWrap}><NavIcon type="prediction" /></span>
                     <span>Prediction</span>
                 </Link>
+
+                <button
+                    className={styles.menuActionBtn}
+                    onClick={() => {
+                        window.dispatchEvent(new CustomEvent('ai-assistant:open'));
+                        handleNavClick();
+                    }}
+                >
+                    <span className={styles.iconWrap}><NavIcon type="ai" /></span>
+                    <span>AI Assistance</span>
+                </button>
             </nav>
 
             <div className={styles.bottomMenu}>

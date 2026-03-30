@@ -96,6 +96,34 @@
   transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
+.menuActionBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 0.94rem;
+  font-weight: 600;
+  color: #1e293b;
+  border-radius: 12px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.menuActionBtn:hover {
+  background: #f1f5f9;
+}
+
+.menuActionBtn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
 .navItem:hover,
 .logoutBtn:hover {
   background: #f1f5f9;
