@@ -1,7 +1,11 @@
 import { NextRequest } from 'next/server';
+import { setDefaultResultOrder } from 'node:dns';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+// Prefer IPv4 DNS resolution first to reduce timeout issues on some hosts.
+setDefaultResultOrder('ipv4first');
 
 type IncomingMessage = {
   role: 'user' | 'assistant';
@@ -22,6 +26,23 @@ Then call the FisherThai API and respond in English with provide markdown format
 - Any warnings (spawning, closures)
 - Google Maps link to each location`;
 
+async function fetchWithRetry(url: string, init: RequestInit, retries = 2): Promise<Response> {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await fetch(url, init);
+    } catch (error) {
+      lastError = error;
+      if (attempt === retries) break;
+      // Small backoff before next retry.
+      await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error('Unknown fetch error');
+}
+
 export async function POST(request: NextRequest) {
   try {
     const apiKey = process.env.OPENTYPHOON_API_KEY || process.env.OPENAI_API_KEY;
@@ -39,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     let upstreamRes: Response;
     try {
-      upstreamRes = await fetch('https://api.opentyphoon.ai/v1/chat/completions', {
+      upstreamRes = await fetchWithRetry('https://api.opentyphoon.ai/v1/chat/completions', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${apiKey}`,
