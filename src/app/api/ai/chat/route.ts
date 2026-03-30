@@ -34,30 +34,38 @@ export async function POST(request: NextRequest) {
     const messages = (body?.messages || []) as IncomingMessage[];
     const pathname = typeof body?.pathname === 'string' ? body.pathname : '/';
 
-    const upstreamRes = await fetch('https://api.opentyphoon.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'typhoon-v2.5-30b-a3b-instruct',
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          {
-            role: 'system',
-            content: `Current page context: ${pathname}. Use this context when user asks about their current page or feature.`,
-          },
-          ...messages.map((m) => ({ role: m.role, content: m.content })),
-        ],
-        temperature: 0.6,
-        max_completion_tokens: 512,
-        top_p: 0.6,
-        frequency_penalty: 0,
-        stream: true,
-      }),
-      signal: AbortSignal.timeout(30000),
-    });
+    const timeoutController = new AbortController();
+    const timeoutId = setTimeout(() => timeoutController.abort('Upstream timeout after 30s'), 30000);
+
+    let upstreamRes: Response;
+    try {
+      upstreamRes = await fetch('https://api.opentyphoon.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'typhoon-v2.5-30b-a3b-instruct',
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            {
+              role: 'system',
+              content: `Current page context: ${pathname}. Use this context when user asks about their current page or feature.`,
+            },
+            ...messages.map((m) => ({ role: m.role, content: m.content })),
+          ],
+          temperature: 0.6,
+          max_completion_tokens: 512,
+          top_p: 0.6,
+          frequency_penalty: 0,
+          stream: true,
+        }),
+        signal: timeoutController.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!upstreamRes.ok || !upstreamRes.body) {
       const upstreamText = await upstreamRes.text();
@@ -115,6 +123,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    console.error('AI chat route error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(`AI chat error: ${message}`, { status: 500 });
   }
