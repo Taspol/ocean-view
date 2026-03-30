@@ -1,5 +1,7 @@
-import OpenAI from 'openai';
 import { NextRequest } from 'next/server';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 type IncomingMessage = {
   role: 'user' | 'assistant';
@@ -32,37 +34,71 @@ export async function POST(request: NextRequest) {
     const messages = (body?.messages || []) as IncomingMessage[];
     const pathname = typeof body?.pathname === 'string' ? body.pathname : '/';
 
-    const openai = new OpenAI({
-      apiKey,
-      baseURL: 'https://api.opentyphoon.ai/v1',
+    const upstreamRes = await fetch('https://api.opentyphoon.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'typhoon-v2.5-30b-a3b-instruct',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          {
+            role: 'system',
+            content: `Current page context: ${pathname}. Use this context when user asks about their current page or feature.`,
+          },
+          ...messages.map((m) => ({ role: m.role, content: m.content })),
+        ],
+        temperature: 0.6,
+        max_completion_tokens: 512,
+        top_p: 0.6,
+        frequency_penalty: 0,
+        stream: true,
+      }),
+      signal: AbortSignal.timeout(30000),
     });
 
-    const stream = await openai.chat.completions.create({
-      model: 'typhoon-v2.5-30b-a3b-instruct',
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        {
-          role: 'system',
-          content: `Current page context: ${pathname}. Use this context when user asks about their current page or feature.`,
-        },
-        ...messages.map((m) => ({ role: m.role, content: m.content })),
-      ],
-      temperature: 0.6,
-      max_completion_tokens: 512,
-      top_p: 0.6,
-      frequency_penalty: 0,
-      stream: true,
-    });
+    if (!upstreamRes.ok || !upstreamRes.body) {
+      const upstreamText = await upstreamRes.text();
+      return new Response(
+        `AI upstream error (${upstreamRes.status}): ${upstreamText || upstreamRes.statusText || 'Unknown upstream error'}`,
+        { status: 502 }
+      );
+    }
 
+    const reader = upstreamRes.body.getReader();
     const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
 
     const readable = new ReadableStream<Uint8Array>({
       async start(controller) {
+        let buffer = '';
         try {
-          for await (const chunk of stream) {
-            const token = chunk.choices?.[0]?.delta?.content || '';
-            if (token) {
-              controller.enqueue(encoder.encode(token));
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() ?? '';
+
+            for (const rawLine of lines) {
+              const line = rawLine.trim();
+              if (!line.startsWith('data:')) continue;
+
+              const payload = line.slice(5).trim();
+              if (!payload || payload === '[DONE]') continue;
+
+              try {
+                const json = JSON.parse(payload) as {
+                  choices?: Array<{ delta?: { content?: string } }>;
+                };
+                const token = json.choices?.[0]?.delta?.content || '';
+                if (token) controller.enqueue(encoder.encode(token));
+              } catch {
+                // Ignore non-JSON SSE lines and continue streaming.
+              }
             }
           }
           controller.close();
