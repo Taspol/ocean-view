@@ -3,6 +3,23 @@ import { NextRequest } from 'next/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+let dnsPreferenceConfigured = false;
+
+async function ensureIpv4FirstDns() {
+  if (dnsPreferenceConfigured) return;
+
+  try {
+    const dns = await import('node:dns');
+    if (typeof dns.setDefaultResultOrder === 'function') {
+      dns.setDefaultResultOrder('ipv4first');
+    }
+  } catch {
+    // Ignore if runtime does not expose node:dns.
+  }
+
+  dnsPreferenceConfigured = true;
+}
+
 type IncomingMessage = {
   role: 'user' | 'assistant';
   content: string;
@@ -27,6 +44,8 @@ async function callProvider(args: {
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
   timeoutMs?: number;
 }): Promise<Response> {
+  await ensureIpv4FirstDns();
+
   const body = {
     model: args.model,
     messages: args.messages,
